@@ -665,7 +665,7 @@ main.addEventListener('click',ev=>{
    Collez entre les apostrophes le lien CSV obtenu dans Google Sheets via
    Fichier > Partager > Publier sur le Web > onglet « Calendrier » > format CSV.
    Laissez vide pour utiliser les données intégrées ci-dessus. */
-const SHEET_CSV_URL='';
+const SHEET_CSV_URL='https://docs.google.com/spreadsheets/d/e/2PACX-1vRaxyNT8fDkIvxaFZnOmt7Fpmc2rxkvQs8w9Qi_3jWm8Z8PRXycYxByWbXsUN1ysLI2Nk8f3C-RpcLZ/pub?gid=183179586&single=true&output=csv';
 
 const gsNorm=s=>String(s||'').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
 const gsPad=n=>String(n).padStart(2,'0');
