@@ -95,10 +95,25 @@ h1 .yr{color:var(--sud)}
 .months button .c{font-family:var(--f-body);font-size:11px;font-weight:600;margin-left:3px;color:var(--muted)}
 .count{font-size:13px;color:var(--muted);margin-left:auto}
 
-.src{font-size:12px;color:var(--muted);margin-left:auto}
-.src.live{color:var(--bfc);font-weight:600}
-.src.err{color:var(--cdc);font-weight:600}
-.src+.count{margin-left:12px}
+.src{font-size:13px;color:var(--muted);margin-left:auto;display:inline-flex;align-items:center;gap:7px;font-weight:600}
+.src::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--muted);flex:none}
+.src.live{color:#1F8A4C}.src.live::before{background:#22A55A;box-shadow:0 0 0 3px rgba(34,165,90,.18)}
+.src.err{color:var(--sud)}.src.err::before{background:var(--sud);box-shadow:0 0 0 3px color-mix(in srgb,var(--sud) 20%,transparent)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .src.live{color:#5BD08C}}
+:root[data-theme="dark"] .src.live{color:#5BD08C}
+/* Liste déroulante des catégories */
+.dd{position:relative}
+.dd>summary{list-style:none;cursor:pointer;display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 14px;font-size:14px;font-weight:500}
+.dd>summary::-webkit-details-marker{display:none}
+.dd>summary::after{content:"";width:7px;height:7px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:translateY(-2px) rotate(45deg);margin-left:2px}
+.dd[open]>summary::after{transform:translateY(2px) rotate(-135deg)}
+.dd>summary .lbl{color:var(--muted)}
+.dd .panel{position:absolute;left:0;top:calc(100% + 6px);z-index:30;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 28px rgba(0,0,0,.14);padding:6px;min-width:260px;max-width:calc(100vw - 32px);display:flex;flex-direction:column}
+.dd .opt{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:14px}
+.dd .opt:hover{background:var(--surface-2)}
+.dd .opt input{accent-color:var(--sud);width:16px;height:16px;margin:0}
+.dd .opt .dot{width:10px;height:10px;border-radius:50%;background:var(--c);flex:none}
+.dd .opt.all{border-bottom:1px solid var(--line);border-radius:8px 8px 0 0;margin-bottom:4px;font-weight:600}
 
 /* Liste */
 .month{margin-top:28px;scroll-margin-top:190px}
@@ -234,14 +249,13 @@ details.lex summary{cursor:pointer;font-family:var(--f-brand);font-weight:400;fo
       <label class="search"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
         <input id="q" type="search" placeholder="Club, ville, challenge, championnat…" aria-label="Rechercher"></label>
     </div>
-    <div class="row" id="cats"></div>
+    <div class="row" id="cats"><details class="dd" id="dd-cats"><summary><span class="lbl">Catégories :</span> <span id="dd-sum">Toutes</span></summary><div class="panel" id="dd-panel"></div></details></div>
     <div class="row">
       <label class="toggle"><input type="checkbox" id="t-up"> À venir uniquement</label>
       <label class="toggle" id="lbl-x" hidden><input type="checkbox" id="t-x" checked> Afficher les annulés</label>
       <label class="toggle"><input type="checkbox" id="t-club"> Concours du Carreau uniquement</label>
       
       <span class="src" id="src"></span>
-      <span class="count num" id="count"></span>
     </div>
     <nav class="months" id="months" aria-label="Mois"></nav>
   </div>
@@ -608,8 +622,15 @@ function header(){
 function controls(){
   document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.view===S.view));
   document.querySelectorAll('[data-zone]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.zone===S.zone));
-  document.getElementById('cats').innerHTML=Object.entries(CATS).filter(([k])=>k!=='i').map(([k,c])=>
-    `<button class="chip" id="cat-${k}" data-cat="${k}" aria-pressed="${S.cats.has(k)}" style="--c:var(${c.v})"><span class="dot"></span>${c.l}</button>`).join('');
+  const keys=Object.keys(CATS).filter(k=>k!=='i'), on=keys.filter(k=>S.cats.has(k));
+  const panel=document.getElementById('dd-panel');
+  if(!panel.childElementCount){
+    panel.innerHTML=`<label class="opt all"><input type="checkbox" id="cat-all"> Toutes les catégories</label>`+keys.map(k=>
+      `<label class="opt"><input type="checkbox" id="cat-${k}" data-cat="${k}"><span class="dot" style="--c:var(${CATS[k].v})"></span>${CATS[k].l}</label>`).join('');
+  }
+  keys.forEach(k=>{document.getElementById('cat-'+k).checked=S.cats.has(k)});
+  const all=document.getElementById('cat-all'); all.checked=on.length===keys.length; all.indeterminate=on.length>0&&on.length<keys.length;
+  document.getElementById('dd-sum').textContent=on.length===keys.length?'Toutes':on.length===0?'Aucune':on.length===1?CATS[on[0]].l:on.length+' sélectionnées';
   const hasA=EV.some(e=>e.arbs.length), hasX=EV.some(e=>e.x);
   document.getElementById('v-arb').hidden=!hasA; document.getElementById('lbl-x').hidden=!hasX;
   if(!hasA&&S.view==='arb')S.view='list';
@@ -636,7 +657,6 @@ function monthsNav(list){
 function render(){
   const list=filtered();
   const n=list.filter(e=>e.c!=='i').length;
-  document.getElementById('count').textContent=`${n} compétition${n>1?'s':''} affichée${n>1?'s':''}`;
   controls(); monthsNav(list);
   if(S.view==='list')renderList(list); else if(S.view==='cal')renderCal(list); else renderArb(list);
   save();
@@ -651,6 +671,14 @@ document.getElementById('bar').addEventListener('click',ev=>{
     if(S.cats.has(k)&&[...S.cats].filter(c=>c!=='i').length===1)S.cats=new Set(Object.keys(CATS));
     else if(S.cats.has(k))S.cats.delete(k); else S.cats.add(k); render();}
 });
+document.getElementById('dd-panel').addEventListener('change',ev=>{
+  const c=ev.target; if(c.type!=='checkbox')return;
+  if(c.id==='cat-all'){S.cats=c.checked?new Set(Object.keys(CATS)):new Set(['i']);}
+  else if(c.checked)S.cats.add(c.dataset.cat); else S.cats.delete(c.dataset.cat);
+  render();
+});
+document.addEventListener('click',ev=>{const d=document.getElementById('dd-cats');if(d.open&&!d.contains(ev.target))d.open=false});
+document.addEventListener('keydown',ev=>{if(ev.key==='Escape')document.getElementById('dd-cats').open=false});
 document.getElementById('q').addEventListener('input',e=>{S.q=e.target.value;render()});
 document.getElementById('t-up').addEventListener('change',e=>{S.up=e.target.checked;render()});
 document.getElementById('t-x').addEventListener('change',e=>{S.x=e.target.checked;render()});
@@ -705,24 +733,32 @@ function gsToRaw(rows){
   const y=+Object.keys(years).sort((a,b)=>years[b]-years[a])[0];
   return{year:y,raw:out.filter(o=>o.y===y)};
 }
+const DATA_DATE=new Date(2026,9,30,12,0); // date des données intégrées au fichier
+const gsStamp=t=>gsPad(t.getDate())+'/'+gsPad(t.getMonth()+1)+'/'+t.getFullYear()+' à '+gsPad(t.getHours())+'h'+gsPad(t.getMinutes());
+function gsApply(text){const rows0=gsParseCSV(text); const {year,raw}=gsToRaw(rows0);
+  if(!raw.length)throw new Error('aucune ligne lisible, colonnes reçues : '+(rows0[0]||[]).slice(0,4).join(' | '));
+  YEAR=year; EV=buildEV(raw); document.querySelector('h1 .yr').textContent=YEAR;}
+function gsStale(src,when,why){
+  src.textContent='Dernière mise à jour le '+gsStamp(when); src.className='src err';
+  if(why)src.title='Google Sheets inaccessible : '+why;}
 async function loadSheet(){
   const src=document.getElementById('src');
-  if(!SHEET_CSV_URL){src.textContent='Données intégrées';return}
-  src.textContent='Mise à jour…';
+  if(!SHEET_CSV_URL){gsStale(src,DATA_DATE);return}
+  src.textContent='Mise à jour…'; src.className='src';
   try{
     let r; try{ r=await fetch(SHEET_CSV_URL); }catch(e1){ r=await fetch(SHEET_CSV_URL+'&_='+Date.now(),{mode:'cors'}); }
     if(!r.ok)throw new Error('HTTP '+r.status);
-    const rows0=gsParseCSV(await r.text()); const {year,raw}=gsToRaw(rows0);
-    if(!raw.length)throw new Error('aucune ligne lisible, colonnes reçues : '+(rows0[0]||[]).slice(0,4).join(' | '));
-    YEAR=year; EV=buildEV(raw);
-    document.querySelector('h1 .yr').textContent=YEAR;
+    const text=await r.text(); gsApply(text);
     const t=new Date();
-    src.textContent='● En direct · Google Sheets, '+gsPad(t.getHours())+'h'+gsPad(t.getMinutes());
-    src.className='src live';
+    try{localStorage.setItem('carreau-sheet',JSON.stringify({t:t.getTime(),csv:text}))}catch(e){}
+    src.textContent='Données à jour'; src.className='src live'; src.title='Lu dans Google Sheets le '+gsStamp(t);
     header(); render();
   }catch(err){
-    src.textContent='Google Sheets inaccessible ('+(err&&/fetch|network|load/i.test(err.message)?'connexion refusée depuis '+(location.protocol==='file:'?'un fichier local':location.host||location.protocol):err.message)+'), données intégrées affichées';
-    src.className='src err'; console.warn('Calendrier : lecture Google Sheets impossible',err);
+    const why=err&&/fetch|network|load/i.test(err.message)?'connexion refusée depuis '+(location.protocol==='file:'?'un fichier local':location.host||location.protocol):err&&err.message;
+    console.warn('Calendrier : lecture Google Sheets impossible',err);
+    let cache=null; try{cache=JSON.parse(localStorage.getItem('carreau-sheet')||'null')}catch(e){}
+    if(cache&&cache.csv){try{gsApply(cache.csv); header(); render(); gsStale(src,new Date(cache.t),why); return}catch(e){}}
+    gsStale(src,DATA_DATE,why);
   }
 }
 
