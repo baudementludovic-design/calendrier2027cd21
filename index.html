@@ -95,6 +95,11 @@ h1 .yr{color:var(--sud)}
 .months button .c{font-family:var(--f-body);font-size:11px;font-weight:600;margin-left:3px;color:var(--muted)}
 .count{font-size:13px;color:var(--muted);margin-left:auto}
 
+.src{font-size:12px;color:var(--muted);margin-left:auto}
+.src.live{color:var(--bfc);font-weight:600}
+.src.err{color:var(--cdc);font-weight:600}
+.src+.count{margin-left:12px}
+
 /* Liste */
 .month{margin-top:28px;scroll-margin-top:190px}
 .month h2{font-family:var(--f-brand);font-weight:400;font-size:32px;text-transform:uppercase;font-weight:700;display:flex;align-items:baseline;gap:10px;border-bottom:1px solid var(--line);padding-bottom:4px}
@@ -230,8 +235,10 @@ details.lex summary{cursor:pointer;font-family:var(--f-brand);font-weight:400;fo
     <div class="row" id="cats"></div>
     <div class="row">
       <label class="toggle"><input type="checkbox" id="t-up"> À venir uniquement</label>
+      <label class="toggle" id="lbl-x" hidden><input type="checkbox" id="t-x" checked> Afficher les annulés</label>
       <label class="toggle"><input type="checkbox" id="t-club"> Concours du Carreau uniquement</label>
       
+      <span class="src" id="src"></span>
       <span class="count num" id="count"></span>
     </div>
     <nav class="months" id="months" aria-label="Mois"></nav>
@@ -250,7 +257,7 @@ details.lex summary{cursor:pointer;font-family:var(--f-brand);font-weight:400;fo
       <div><b>4P</b>4 parties</div><div><b>CDC</b>Championnat des clubs</div><div><b>CNC</b>Championnat national des clubs</div><div><b>CRC</b>Championnat régional des clubs</div><div><b>CCO</b>Championnat de Côte-d'Or</div><div><b>CDF</b>Championnat de France</div><div><b>BFC</b>Bourgogne-Franche-Comté (ligue)</div><div><b>GP</b>Grand Prix</div>
     </div>
   </details>
-  <p class="foot">Source : calendrier CD21 2027 (PDF).</p>
+  <p class="foot"><span id="foot-src">Source : calendrier CD21 2027 (PDF).</span></p>
 </div>
 
 <script>
@@ -433,7 +440,7 @@ const RAW=[
 {d:'12-25',z:'a',c:'i',t:'Noël'}
 ];
 
-const YEAR=2027;
+let YEAR=2027;
 const MONTHS=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 const MSHORT=['Janv','Févr','Mars','Avr','Mai','Juin','Juil','Août','Sept','Oct','Nov','Déc'];
 const DAYS=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
@@ -449,12 +456,13 @@ const CATS={
 const ZL={s:'Sud',n:'Nord',a:'Toutes zones'};
 
 const toDate=s=>{const[m,d]=s.split('-').map(Number);return new Date(YEAR,m-1,d)};
-const EV=RAW.map((r,i)=>{
+function buildEV(raw){return raw.map((r,i)=>{
   const start=toDate(r.d), end=r.e?toDate(r.e):start;
   const arbs=r.a?r.a.split(/\s*,\s*/):[];
   return {...r,id:i,start,end,arbs,m:start.getMonth(),club:/MARSANNAY/i.test(r.t),
     hay:(r.t+' '+(r.n||'')+' '+(r.a||'')+' '+CATS[r.c].l).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')};
-});
+});}
+let EV=buildEV(RAW);
 
 const now=new Date(); const today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
 const sameDay=(a,b)=>a.getTime()===b.getTime();
@@ -477,7 +485,7 @@ function formats(t){
 /* ---------- État ---------- */
 const S={view:'list',zone:'all',cats:new Set(Object.keys(CATS)),q:'',up:false,club:false,x:true,calM:today.getFullYear()===YEAR?today.getMonth():0,sel:null};
 try{const saved=JSON.parse(localStorage.getItem('carreau2027')||'{}');
-  if(saved.view&&saved.view!=='arb')S.view=saved.view; if(saved.zone)S.zone=saved.zone;
+  if(saved.view)S.view=saved.view; if(saved.zone)S.zone=saved.zone;
   if(Array.isArray(saved.cats))S.cats=new Set(saved.cats.filter(c=>CATS[c]));
   if(typeof saved.up==='boolean')S.up=saved.up; if(typeof saved.club==='boolean')S.club=saved.club; if(typeof saved.x==='boolean')S.x=saved.x;}catch(e){}
 function save(){try{localStorage.setItem('carreau2027',JSON.stringify({view:S.view,zone:S.zone,cats:[...S.cats],up:S.up,club:S.club,x:S.x}))}catch(e){}}
@@ -584,10 +592,10 @@ function header(){
   const x=comp.filter(e=>e.x).length;
   const arbs=new Set(); EV.forEach(e=>e.arbs.forEach(a=>arbs.add(a)));
   document.getElementById('stats').innerHTML=
-    `<span><b>${comp.length}</b>compétitions</span><span><b style="color:var(--sud)">${sud}</b>zone Sud</span><span><b style="color:var(--nord)">${nord}</b>zone Nord</span><span><b>${all}</b>toutes zones</span><span><b style="color:var(--champ)">${comp.filter(e=>e.c==='ch').length}</b>CCO & nationaux</span><span><b style="color:var(--fr)">${comp.filter(e=>e.c==='fr').length}</b>championnats de France</span><span><b>${comp.filter(e=>e.club).length}</b>au Carreau</span>`;
+    `<span><b>${comp.length}</b>compétitions</span><span><b style="color:var(--sud)">${sud}</b>zone Sud</span><span><b style="color:var(--nord)">${nord}</b>zone Nord</span><span><b>${all}</b>toutes zones</span><span><b style="color:var(--champ)">${comp.filter(e=>e.c==='ch').length}</b>CCO & nationaux</span><span><b style="color:var(--fr)">${comp.filter(e=>e.c==='fr').length}</b>championnats de France</span><span><b>${comp.filter(e=>e.club).length}</b>au Carreau</span>`+(arbs.size?`<span><b>${arbs.size}</b>arbitres</span>`:'')+(x?`<span><b style="color:var(--cdc)">${x}</b>annulées</span>`:'');
   const nx=EV.filter(e=>e.c!=='i'&&!e.x&&e.end>=today).sort((a,b)=>a.start-b.start);
   const el=document.getElementById('next');
-  if(!nx.length){el.innerHTML='<div class="lbl">Saison 2027</div><div class="when">Saison terminée</div>';return}
+  if(!nx.length){el.innerHTML='<div class="lbl">Saison '+YEAR+'</div><div class="when">Saison terminée</div>';return}
   const e=nx[0], days=Math.round((e.start-today)/864e5);
   const same=nx.filter(o=>sameDay(o.start,e.start)).length;
   el.innerHTML=`<div class="lbl">Prochaine compétition</div>
@@ -601,7 +609,11 @@ function controls(){
   document.querySelectorAll('[data-zone]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.zone===S.zone));
   document.getElementById('cats').innerHTML=Object.entries(CATS).map(([k,c])=>
     `<button class="chip" id="cat-${k}" data-cat="${k}" aria-pressed="${S.cats.has(k)}" style="--c:var(${c.v})"><span class="dot"></span>${c.l}</button>`).join('');
+  const hasA=EV.some(e=>e.arbs.length), hasX=EV.some(e=>e.x);
+  document.getElementById('v-arb').hidden=!hasA; document.getElementById('lbl-x').hidden=!hasX;
+  if(!hasA&&S.view==='arb')S.view='list';
   document.getElementById('t-up').checked=S.up;
+  document.getElementById('t-x').checked=S.x;
   document.getElementById('t-club').checked=S.club;
   
 }
@@ -640,6 +652,7 @@ document.getElementById('bar').addEventListener('click',ev=>{
 });
 document.getElementById('q').addEventListener('input',e=>{S.q=e.target.value;render()});
 document.getElementById('t-up').addEventListener('change',e=>{S.up=e.target.checked;render()});
+document.getElementById('t-x').addEventListener('change',e=>{S.x=e.target.checked;render()});
 document.getElementById('t-club').addEventListener('change',e=>{S.club=e.target.checked;render()});
 
 main.addEventListener('click',ev=>{
@@ -648,7 +661,72 @@ main.addEventListener('click',ev=>{
   window.scrollTo({top:document.getElementById('bar').offsetTop,behavior:'smooth'});
 });
 
-header(); render();
+/* ---------- Données en direct (Google Sheets) ----------
+   Collez entre les apostrophes le lien CSV obtenu dans Google Sheets via
+   Fichier > Partager > Publier sur le Web > onglet « Calendrier » > format CSV.
+   Laissez vide pour utiliser les données intégrées ci-dessus. */
+const SHEET_CSV_URL='https://docs.google.com/spreadsheets/d/e/2PACX-1vRaxyNT8fDkIvxaFZnOmt7Fpmc2rxkvQs8w9Qi_3jWm8Z8PRXycYxByWbXsUN1ysLI2Nk8f3C-RpcLZ/pub?gid=183179586&single=true&output=csv';
+
+const gsNorm=s=>String(s||'').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+const gsPad=n=>String(n).padStart(2,'0');
+function gsParseCSV(t){
+  const rows=[];let row=[],f='',q=false;
+  for(let i=0;i<t.length;i++){const c=t[i];
+    if(q){if(c==='"'){if(t[i+1]==='"'){f+='"';i++}else q=false}else f+=c}
+    else if(c==='"')q=true; else if(c===','){row.push(f);f=''}
+    else if(c==='\n'){row.push(f);rows.push(row);row=[];f=''} else if(c!=='\r')f+=c}
+  if(f||row.length){row.push(f);rows.push(row)}
+  return rows;
+}
+function gsDate(s){s=String(s||'').trim();let m;
+  if((m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/)))return{y:+m[1],m:+m[2],d:+m[3]};
+  if((m=s.match(/^(\d{1,2})[\/.](\d{1,2})[\/.](\d{2,4})/)))return{y:m[3].length===2?2000+ +m[3]:+m[3],m:+m[2],d:+m[1]};
+  return null}
+function gsCat(s){const v=gsNorm(s);
+  if(/france|cdf/.test(v))return'fr'; if(/region|bfc|crc/.test(v))return'bfc';
+  if(/cdc|comite|coupe|cnc/.test(v))return'k'; if(/championnat|national|cco/.test(v))return'ch';
+  if(/info|ferie/.test(v))return'i'; return'c'}
+function gsZone(s){const v=gsNorm(s);return v.startsWith('sud')?'s':v.startsWith('nord')?'n':'a'}
+function gsToRaw(rows){
+  const h=(rows[0]||[]).map(gsNorm), find=fn=>h.findIndex(fn);
+  const ci={d:find(x=>x.startsWith('date')&&!x.includes('fin')),e:find(x=>x.includes('fin')),z:find(x=>x.startsWith('zone')),
+    c:find(x=>x.startsWith('categ')),t:find(x=>x.startsWith('compet')),n:find(x=>x.startsWith('preci')),a:find(x=>x.startsWith('arbit')),x:find(x=>x.startsWith('annul'))};
+  const out=[],years={};
+  rows.slice(1).forEach(r=>{const g=k=>ci[k]>=0?String(r[ci[k]]||'').trim():'';
+    const d=gsDate(g('d')),t=g('t'); if(!d||!t)return;
+    const e=gsDate(g('e')); years[d.y]=(years[d.y]||0)+1;
+    const o={y:d.y,d:gsPad(d.m)+'-'+gsPad(d.d),z:gsZone(g('z')),c:gsCat(g('c')),t};
+    if(e&&e.y===d.y&&(e.m!==d.m||e.d!==d.d))o.e=gsPad(e.m)+'-'+gsPad(e.d);
+    if(g('n'))o.n=g('n');
+    if(g('a'))o.a=g('a').split(/\s*[,;\/]\s*/).filter(Boolean).join(', ');
+    if(/^(oui|o|x|1|annul|vrai|true)/i.test(g('x')))o.x=1;
+    out.push(o)});
+  const y=+Object.keys(years).sort((a,b)=>years[b]-years[a])[0];
+  return{year:y,raw:out.filter(o=>o.y===y)};
+}
+async function loadSheet(){
+  const src=document.getElementById('src');
+  if(!SHEET_CSV_URL){src.textContent='Données intégrées';return}
+  src.textContent='Mise à jour…';
+  try{
+    let r; try{ r=await fetch(SHEET_CSV_URL); }catch(e1){ r=await fetch(SHEET_CSV_URL+'&_='+Date.now(),{mode:'cors'}); }
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const rows0=gsParseCSV(await r.text()); const {year,raw}=gsToRaw(rows0);
+    if(!raw.length)throw new Error('aucune ligne lisible, colonnes reçues : '+(rows0[0]||[]).slice(0,4).join(' | '));
+    YEAR=year; EV=buildEV(raw);
+    document.querySelector('h1 .yr').textContent=YEAR;
+    const t=new Date();
+    src.textContent='● En direct · Google Sheets, '+gsPad(t.getHours())+'h'+gsPad(t.getMinutes());
+    src.className='src live';
+    document.getElementById('foot-src').textContent='Source : Google Sheets du calendrier '+YEAR+'.';
+    header(); render();
+  }catch(err){
+    src.textContent='Google Sheets inaccessible ('+(err&&/fetch|network|load/i.test(err.message)?'connexion refusée depuis '+(location.protocol==='file:'?'un fichier local':location.host||location.protocol):err.message)+'), données intégrées affichées';
+    src.className='src err'; console.warn('Calendrier : lecture Google Sheets impossible',err);
+  }
+}
+
+header(); render(); loadSheet();
 </script>
 
 </body>
