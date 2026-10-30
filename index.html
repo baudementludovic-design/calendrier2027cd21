@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Calendrier CD21 2027</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout : en-tête « tableau d'affichage », barre de filtres collante, puis liste par mois / grille mensuelle / vue arbitres */
+:root{
+  --bg:#F2F3F0; --surface:#FFFFFF; --surface-2:#E9EBE6; --ink:#1A2024; --muted:#5B656C; --line:#D6DAD4;
+  --sud:#A9620A; --sud-soft:#F6E7D2; --nord:#1D5A86; --nord-soft:#DCE8F2;
+  --cdc:#C02A2A; --champ:#7A3E9D; --bfc:#0D828B; --fr:#9A7B00; --fr-soft:#F7E9A6; --info:#5B656C;
+  --focus:#1D5A86; --today:#C02A2A;
+  --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --r:10px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#111518; --surface:#192025; --surface-2:#222A30; --ink:#E6E9E5; --muted:#9CA5AB; --line:#2C353B;
+  --sud:#E8A04A; --sud-soft:#3A2A16; --nord:#72AEDC; --nord-soft:#18304A;
+  --cdc:#F07070; --champ:#C29BE0; --bfc:#4FC6CD; --fr:#E8C94A; --fr-soft:#3B3412; --info:#9CA5AB;
+  --focus:#72AEDC; --today:#F07070; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111518; --surface:#192025; --surface-2:#222A30; --ink:#E6E9E5; --muted:#9CA5AB; --line:#2C353B;
+  --sud:#E8A04A; --sud-soft:#3A2A16; --nord:#72AEDC; --nord-soft:#18304A;
+  --cdc:#F07070; --champ:#C29BE0; --bfc:#4FC6CD; --fr:#E8C94A; --fr-soft:#3B3412; --info:#9CA5AB;
+  --focus:#72AEDC; --today:#F07070; color-scheme:dark}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:20px 60px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;letter-spacing:.01em}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+
+/* En-tête */
+.top{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:20px;align-items:end;padding-bottom:18px;border-bottom:2px solid var(--ink)}
+.eyebrow{font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:600}
+h1{font-size:clamp(40px,7vw,72px);line-height:.92;font-weight:700;text-transform:uppercase}
+h1 .yr{color:var(--sud)}
+.sub{color:var(--muted);margin:8px 0 0;max-width:60ch}
+.zones{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap}
+.zpill{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;padding:3px 10px;border-radius:999px}
+.zpill.s{background:var(--sud-soft);color:var(--sud)} .zpill.n{background:var(--nord-soft);color:var(--nord)}
+.next{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;min-width:0;max-width:340px}
+.next .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:600}
+.next .when{font-family:var(--f-display);font-size:26px;font-weight:700;line-height:1.05;margin-top:2px}
+.next .what{font-weight:600;margin-top:2px}
+.next .in{font-size:13px;color:var(--muted)}
+.stats{display:flex;flex-wrap:wrap;gap:6px 22px;margin-top:14px;font-size:13px;color:var(--muted)}
+.stats b{font-family:var(--f-display);font-size:22px;color:var(--ink);font-weight:700;margin-right:4px}
+
+/* Barre de filtres */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);padding-block:12px 10px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.seg{display:inline-flex;background:var(--surface-2);border-radius:999px;padding:3px}
+.seg button{border:0;background:transparent;padding:6px 14px;border-radius:999px;cursor:pointer;font-weight:600;font-size:14px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.seg button[data-zone="s"][aria-pressed="true"]{color:var(--sud)}
+.seg button[data-zone="n"][aria-pressed="true"]{color:var(--nord)}
+.search{flex:1 1 220px;min-width:0;position:relative}
+.search input{width:100%;padding:8px 12px 8px 34px;border:1px solid var(--line);border-radius:999px;background:var(--surface)}
+.search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:15px;height:15px;stroke:var(--muted)}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:4px 11px 4px 9px;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-weight:500}
+.chip .dot{width:9px;height:9px;border-radius:50%;background:var(--c)}
+.chip[aria-pressed="false"]{opacity:.45}
+.chip[aria-pressed="false"] .dot{background:transparent;box-shadow:inset 0 0 0 1.5px var(--c)}
+.toggle{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);cursor:pointer;user-select:none}
+.toggle input{accent-color:var(--nord);width:16px;height:16px}
+.months{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.months::-webkit-scrollbar{display:none}
+.months button{flex:0 0 auto;border:0;background:transparent;font-family:var(--f-display);font-weight:600;font-size:16px;text-transform:uppercase;letter-spacing:.04em;padding:4px 9px;border-radius:6px;cursor:pointer;color:var(--muted)}
+.months button:hover{background:var(--surface-2);color:var(--ink)}
+.months button.cur{color:var(--ink);background:var(--surface)}
+.months button .c{font-family:var(--f-body);font-size:11px;font-weight:600;margin-left:3px;color:var(--muted)}
+.count{font-size:13px;color:var(--muted);margin-left:auto}
+
+/* Liste */
+.month{margin-top:28px;scroll-margin-top:190px}
+.month h2{font-size:34px;text-transform:uppercase;font-weight:700;display:flex;align-items:baseline;gap:10px;border-bottom:1px solid var(--line);padding-bottom:4px}
+.month h2 small{font-family:var(--f-body);font-size:13px;color:var(--muted);font-weight:500;text-transform:none}
+.day{display:grid;grid-template-columns:62px minmax(0,1fr);gap:14px;padding-block:10px;border-bottom:1px dashed var(--line)}
+.day.past{opacity:.55}
+.day.today .dnum{color:var(--today)}
+.dt{text-align:center;padding-top:2px}
+.dt .dn{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:600}
+.dt .dnum{font-family:var(--f-display);font-size:34px;font-weight:700;line-height:.95}
+.dt.we .dn{color:var(--ink)}
+.evs{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:8px;min-width:0}
+.ev{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:9px 12px 10px;min-width:0;position:relative;overflow:hidden}
+.ev::before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:var(--zc)}
+.ev.z-s{--zc:var(--sud)} .ev.z-n{--zc:var(--nord)} .ev.z-a{--zc:linear-gradient(var(--sud) 50%,var(--nord) 50%)}
+.ev.z-a{grid-column:1/-1}
+.ev .meta{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-bottom:4px}
+.tag{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;padding:1px 7px;border-radius:4px;line-height:1.5}
+.tag.zs{background:var(--sud-soft);color:var(--sud)} .tag.zn{background:var(--nord-soft);color:var(--nord)}
+.tag.za{background:var(--surface-2);color:var(--ink)}
+.tag.cat{color:var(--c);box-shadow:inset 0 0 0 1px var(--c)}
+.tag.fmt{background:var(--surface-2);color:var(--muted);text-transform:none;letter-spacing:0}
+.tag.x{background:var(--cdc);color:var(--surface)}
+.ev .t{font-weight:600;overflow-wrap:anywhere}
+.ev .n{font-size:13px;color:var(--muted);margin-top:2px}
+.ev .arb{font-size:13px;color:var(--nord);margin-top:4px;display:flex;gap:6px;align-items:baseline}
+.ev .arb span{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+.ev .arb button{border:0;background:none;padding:0;color:inherit;cursor:pointer;text-decoration:underline;text-decoration-color:color-mix(in srgb,currentColor 35%,transparent);text-underline-offset:2px}
+.ev.cancel .t{text-decoration:line-through;text-decoration-thickness:1.5px;color:var(--muted)}
+.ev.c-k .t{color:var(--cdc)} .ev.c-ch .t{color:var(--champ)} .ev.c-bfc .t{color:var(--bfc)} .ev.c-fr .t{color:var(--fr)}
+.ev.c-fr{background:linear-gradient(90deg,var(--fr-soft),var(--surface) 70%)}
+.ev.c-i{background:var(--surface-2);border-style:dashed}
+.ev.c-i .t{color:var(--muted)}
+.range{font-size:12px;color:var(--muted);font-weight:500}
+.empty{padding:50px 10px;text-align:center;color:var(--muted)}
+.empty b{display:block;font-family:var(--f-display);font-size:26px;color:var(--ink)}
+
+/* Grille mensuelle */
+.calhead{display:flex;align-items:center;gap:10px;margin-top:22px}
+.calhead h2{font-size:34px;text-transform:uppercase;flex:1}
+.nav{border:1px solid var(--line);background:var(--surface);border-radius:8px;width:38px;height:38px;cursor:pointer;font-size:18px}
+.gridwrap{overflow-x:auto;margin-top:10px}
+.grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;min-width:0}
+.gh{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:600;text-align:center;padding-bottom:2px}
+.cell{background:var(--surface);border:1px solid var(--line);border-radius:8px;min-height:104px;padding:5px;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:3px;min-width:0}
+.cell.blank{background:transparent;border-color:transparent;cursor:default}
+.cell.we{background:color-mix(in srgb,var(--surface) 70%,var(--surface-2))}
+.cell .cn{font-family:var(--f-display);font-weight:700;font-size:18px;line-height:1}
+.cell.today .cn{color:var(--today)}
+.cell.sel{outline:2px solid var(--ink);outline-offset:-1px}
+.cell .mini{font-size:11px;line-height:1.25;padding:2px 4px;border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-left:3px solid var(--zc);background:var(--surface-2)}
+.cell .mini.z-s{--zc:var(--sud)} .cell .mini.z-n{--zc:var(--nord)} .cell .mini.z-a{--zc:var(--ink)}
+.cell .mini.cancel{text-decoration:line-through;opacity:.6}
+.cell .more{font-size:11px;color:var(--muted)}
+.dots{display:none;gap:3px;flex-wrap:wrap}
+.dots i{width:7px;height:7px;border-radius:50%;background:var(--zc)}
+.dots i.z-s{--zc:var(--sud)} .dots i.z-n{--zc:var(--nord)} .dots i.z-a{--zc:var(--ink)}
+.dayd{margin-top:14px}
+.dayd h3{font-size:22px;margin-bottom:8px;text-transform:uppercase}
+
+/* Arbitres */
+.arbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,330px),1fr));gap:10px;margin-top:22px}
+.arbc{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;min-width:0}
+.arbc h3{font-size:22px;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.arbc h3 span{font-family:var(--f-body);font-size:12px;color:var(--muted);font-weight:600}
+.arbc ul{list-style:none;padding:0;margin:8px 0 0;display:flex;flex-direction:column;gap:4px;font-size:13px}
+.arbc li{display:grid;grid-template-columns:76px minmax(0,1fr);gap:8px}
+.arbc li .d{color:var(--muted)}
+.arbc li.cancel .w{text-decoration:line-through;color:var(--muted)}
+.arbc li.past{opacity:.55}
+
+/* Lexique */
+details.lex{margin-top:36px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 16px}
+details.lex summary{cursor:pointer;font-family:var(--f-display);font-size:22px;font-weight:700;text-transform:uppercase}
+.lexg{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr));gap:4px 20px;margin-top:10px;font-size:14px}
+.lexg div{display:flex;gap:8px}.lexg b{min-width:54px;font-family:var(--f-display);font-size:17px}
+.foot{margin-top:18px;font-size:12px;color:var(--muted)}
+
+@media (max-width:720px){
+  .top{grid-template-columns:minmax(0,1fr)}
+  .next{max-width:none}
+  .cell{min-height:58px}
+  .cell .mini,.cell .more{display:none}
+  .dots{display:flex}
+  .day{grid-template-columns:46px minmax(0,1fr);gap:10px}
+  .dt .dnum{font-size:28px}
+  .month{scroll-margin-top:240px}
+}
+@media (prefers-reduced-motion:no-preference){
+  .ev,.cell{transition:transform .15s ease,box-shadow .15s ease}
+  .cell:not(.blank):hover{transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,.08)}
+  html{scroll-behavior:smooth}
+}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow">Pétanque · Comité de Côte-d'Or</div>
+      <h1>Calendrier <span class="yr">2027</span></h1>
+      <p class="sub">Toutes les compétitions de la saison, réparties entre la zone Sud et la zone Nord, avec les championnats départementaux, régionaux et de France.</p>
+      <div class="zones"><span class="zpill s">● Zone Sud</span><span class="zpill n">● Zone Nord</span></div>
+      <div class="stats num" id="stats"></div>
+    </div>
+    <aside class="next" id="next" aria-live="polite"></aside>
+  </header>
+
+  <div class="bar" id="bar">
+    <div class="row">
+      <div class="seg" role="group" aria-label="Affichage">
+        <button id="v-list" data-view="list">Liste</button>
+        <button id="v-cal" data-view="cal">Mois</button>
+        <button id="v-arb" data-view="arb" hidden>Arbitres</button>
+      </div>
+      <div class="seg" role="group" aria-label="Zone">
+        <button id="z-all" data-zone="all">Toutes zones</button>
+        <button id="z-s" data-zone="s">Sud</button>
+        <button id="z-n" data-zone="n">Nord</button>
+      </div>
+      <label class="search"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="q" type="search" placeholder="Club, ville, challenge, championnat…" aria-label="Rechercher"></label>
+    </div>
+    <div class="row" id="cats"></div>
+    <div class="row">
+      <label class="toggle"><input type="checkbox" id="t-up"> À venir uniquement</label>
+      
+      <span class="count num" id="count"></span>
+    </div>
+    <nav class="months" id="months" aria-label="Mois"></nav>
+  </div>
+
+  <main id="main"></main>
+
+  <details class="lex">
+    <summary>Abréviations</summary>
+    <div class="lexg">
+      <div><b>T</b>Triplette</div><div><b>D</b>Doublette</div><div><b>I</b>Individuel</div>
+      <div><b>TMX / DMX</b>Triplette / Doublette mixte</div><div><b>V / TV / DV</b>Vétéran(s)</div><div><b>F</b>Féminin</div>
+      <div><b>TS / TSM / TSF</b>Triplette Senior (Masculin / Féminin)</div><div><b>DSM / DSF</b>Doublette Senior Masc. / Fém.</div><div><b>DSMX / TSMX</b>Doublette / Triplette Senior mixte</div>
+      <div><b>ISM / ISF</b>Individuel Senior Masc. / Fém.</div><div><b>TSP</b>Triplette Senior Promotion</div><div><b>TJP / DJP</b>Triplette / Doublette Jeu Provençal</div>
+      <div><b>TD Précision</b>Tir de précision</div><div><b>A/B/C</b>Concours A, B et C</div><div><b>30 %, 40 %…</b>Pourcentage des mises reversé</div>
+      <div><b>4P</b>4 parties</div><div><b>CDC</b>Championnat des clubs</div><div><b>CNC</b>Championnat national des clubs</div><div><b>CRC</b>Championnat régional des clubs</div><div><b>CCO</b>Championnat de Côte-d'Or</div><div><b>CDF</b>Championnat de France</div><div><b>BFC</b>Bourgogne-Franche-Comté (ligue)</div><div><b>GP</b>Grand Prix</div>
+    </div>
+  </details>
+  <p class="foot">Source : calendrier CD21 2027 (PDF).</p>
+</div>
+
+<script>
+/* ---------- Données (extraites du PDF) ----------
+   d: date MM-JJ · e: date de fin · z: s(ud) / n(ord) / a (toutes zones)
+   c: c=concours, k=CDC / Comité / Coupes, ch=championnat & national, bfc, fr=France, i=info
+   a: arbitre(s) · x: annulé · n: précision */
+const RAW=[
+{d:'01-01',z:'a',c:'i',t:'Férié'},
+{d:'01-09',z:'n',c:'c',t:'D 30% SAULIEU 10h'},
+{d:'01-13',z:'n',c:'c',t:'DV 4P SAULIEU 14h'},
+{d:'01-16',z:'s',c:'c',t:'T 35% CLENAY 11h (boulodrome Dijon)'},
+{d:'01-17',z:'s',c:'c',t:'TMX 35% CLENAY 11h (boulodrome Dijon)'},
+{d:'01-20',z:'n',c:'c',t:'DV 4P SAULIEU 14h'},
+{d:'01-23',z:'s',c:'c',t:'T 30% TOISON D’OR 10h (boulodrome Dijon)'},
+{d:'01-23',z:'n',c:'c',t:'D 30% SAULIEU 10h – Challenge P. Jamroz'},
+{d:'01-24',z:'s',c:'c',t:'TMX 30% TOISON D’OR 10h (boulodrome Dijon)'},
+{d:'01-30',e:'01-31',z:'s',c:'c',t:'Régional DRAPEAU'},
+
+{d:'02-03',z:'n',c:'c',t:'DV 4P SAULIEU 14h'},
+{d:'02-06',z:'s',c:'c',t:'T 40% GRESILLES 14h (boulodrome Dijon)'},
+{d:'02-06',z:'n',c:'c',t:'D 30% SAULIEU 10h'},
+{d:'02-07',z:'s',c:'c',t:'TMX 30% GRESILLES 10h (boulodrome Dijon)'},
+{d:'02-10',z:'n',c:'c',t:'DV 4P SAULIEU 14h'},
+{d:'02-13',e:'02-14',z:'s',c:'k',t:'Marathon Féminin',n:'Boulodrome DIJON'},
+{d:'02-13',z:'n',c:'c',t:'D 30% SAULIEU 10h – Challenges D. Callabre et G. De Zan'},
+{d:'02-20',z:'a',c:'ch',t:'CCO Tir de Précision'},
+{d:'02-24',z:'n',c:'c',t:'DV 4P SAULIEU 14h'},
+{d:'02-26',z:'s',c:'c',t:'T 4P MARSANNAY 19h Mucoviscidose'},
+{d:'02-27',z:'s',c:'c',t:'T 30% LE LAC 14h – Challenge C. Renner'},
+{d:'02-27',z:'n',c:'c',t:'DMX 30% SAULIEU 10h'},
+{d:'02-28',z:'s',c:'c',t:'TMX 30% LE LAC 10h'},
+
+{d:'03-03',z:'n',c:'c',t:'DV 4P SAULIEU 14h'},
+{d:'03-06',e:'03-07',z:'a',c:'k',t:'CDC Open et Féminin'},
+{d:'03-13',z:'s',c:'c',t:'TMX 30% MARSANNAY 14h'},
+{d:'03-13',z:'a',c:'ch',t:'CCO Individuel Jeunes'},
+{d:'03-13',z:'n',c:'c',t:'DMX + Individuel 40% USCVL 14h'},
+{d:'03-13',e:'03-14',z:'a',c:'bfc',t:'Championnat Régional Tir de précision',n:'Samedi ou dimanche'},
+{d:'03-14',z:'a',c:'ch',t:'CCO Doublette Jeunes'},
+{d:'03-20',e:'03-21',z:'a',c:'k',t:'CDC Open et Féminin'},
+{d:'03-20',e:'03-21',z:'a',c:'bfc',t:'CRC1 Open et CRC1 Féminin + CRC2 Open B + CRCF2B'},
+{d:'03-27',e:'03-28',z:'a',c:'ch',t:'CCO T Jeu Provençal'},
+{d:'03-27',z:'n',c:'c',t:'T 30% CHATILLON 14h'},
+{d:'03-29',z:'a',c:'i',t:'Férié'},
+{d:'03-29',z:'a',c:'k',t:'Coupe de France + Coupe de Côte d’Or'},
+
+{d:'04-01',z:'a',c:'k',t:'CDC Vétérans 14h'},
+{d:'04-03',e:'04-04',z:'a',c:'ch',t:'CCO TS Mixte'},
+{d:'04-08',z:'a',c:'k',t:'CDC Vétérans 14h'},
+{d:'04-10',e:'04-11',z:'a',c:'ch',t:'CCO DS Féminin + IS Masculin'},
+{d:'04-14',e:'04-15',z:'a',c:'ch',t:'CCO T Vétérans'},
+{d:'04-17',e:'04-18',z:'a',c:'ch',t:'CCO DS Mixte'},
+{d:'04-22',z:'a',c:'k',t:'CDC Vétérans 14h'},
+{d:'04-24',e:'04-25',z:'a',c:'ch',t:'CCO TS Promotion'},
+{d:'04-25',z:'s',c:'c',t:'D 30% LONGVIC 14h – Challenge CASA'},
+{d:'04-29',z:'a',c:'k',t:'CDC Vétérans 14h / Elite 8h30 – 14h30'},
+
+{d:'05-01',z:'a',c:'i',t:'Férié'},
+{d:'05-01',z:'a',c:'k',t:'Coupe de France et Coupe de Côte d’Or'},
+{d:'05-01',z:'a',c:'ch',t:'CCO Tir de Précision Jeunes'},
+{d:'05-01',e:'05-02',z:'a',c:'k',t:'CNC'},
+{d:'05-02',z:'a',c:'ch',t:'CCO T Jeunes'},
+{d:'05-04',z:'s',c:'c',t:'DV 4P GENLIS 14h15'},
+{d:'05-06',z:'a',c:'i',t:'Férié'},
+{d:'05-06',z:'a',c:'bfc',t:'Chpt Régional TS Promotion',n:'USCVL'},
+{d:'05-07',z:'a',c:'bfc',t:'Chpt Régional T Vétérans',n:'USCVL'},
+{d:'05-08',z:'a',c:'bfc',t:'Chpt Régional TS Mixte',n:'USCVL'},
+{d:'05-09',z:'a',c:'bfc',t:'Chpt Régional DS Féminin + IS Masculin',n:'USCVL'},
+{d:'05-11',z:'s',c:'c',t:'DV 4P LAC 14h'},
+{d:'05-13',z:'a',c:'k',t:'CDC Vétérans 14h / Elite 8h30 – 14h30'},
+{d:'05-15',z:'s',c:'c',t:'T 30% COMBLANCHIEN 10h – Challenge CIGIS'},
+{d:'05-15',z:'n',c:'c',t:'D 40% MONTBARD 14h – Challenge H. Corcin'},
+{d:'05-15',z:'a',c:'bfc',t:'Chpt Régional T Jeunes + TJP'},
+{d:'05-16',z:'n',c:'c',t:'D 30% SEMUR 14h'},
+{d:'05-16',z:'a',c:'bfc',t:'Chpt Régional Tir de précision Junior + TJP'},
+{d:'05-17',z:'a',c:'bfc',t:'Chpt Régional DS Mixte'},
+{d:'05-20',z:'a',c:'k',t:'CDC Vétérans 14h / Elite 8h30 – 14h30'},
+{d:'05-22',e:'05-23',z:'a',c:'ch',t:'CCO IS Féminin + DS Masculin'},
+{d:'05-25',z:'s',c:'c',t:'TV 60% ASPTT 9h (limité à 64 équipes) – Challenge R. Malle'},
+{d:'05-27',z:'a',c:'k',t:'CDC Vétérans 14h / Elite 14h30'},
+{d:'05-29',e:'05-30',z:'a',c:'ch',t:'CCO TS Masculin + TS Féminin'},
+
+{d:'06-01',z:'a',c:'k',t:'CDC Vétérans Journée de réserve 14h / Elite 8h30 – 14h30',n:'Si ½ journée : 14h'},
+{d:'06-03',z:'a',c:'k',t:'CDC Vétérans Barrage 8h30 – 14h30'},
+{d:'06-05',z:'n',c:'c',t:'D 40% USCVL 14h – Challenge D. Remond'},
+{d:'06-05',z:'a',c:'bfc',t:'Chpt Régional TS Masculin + TS Féminin'},
+{d:'06-06',z:'a',c:'bfc',t:'Chpt Régional DS Masculin + IS Féminin'},
+{d:'06-08',z:'s',c:'c',t:'DV 4P NEUILLY 14h'},
+{d:'06-09',e:'06-10',z:'a',c:'bfc',t:'CRC V1 – CRC V2B'},
+{d:'06-10',z:'a',c:'k',t:'CDC Vétérans Phases finales 8h30 – 14h30'},
+{d:'06-12',z:'s',c:'c',t:'D 50% NOLAY 10h – Challenge C. Lebeault'},
+{d:'06-12',e:'06-13',z:'a',c:'ch',t:'CCO D Jeu Provençal'},
+{d:'06-12',z:'n',c:'c',t:'D 30% CHATILLON 14h'},
+{d:'06-13',z:'s',c:'c',t:'D 30% NEUILLY 10h'},
+{d:'06-15',z:'s',c:'c',t:'T Vétérans 50% FENAY GP – Challenge M. Koudass',n:'Poules A/B'},
+{d:'06-17',z:'s',c:'c',t:'DV 4P GEVREY 14h'},
+{d:'06-17',z:'n',c:'c',t:'DV 4P CHATILLON 14h'},
+{d:'06-19',z:'s',c:'c',t:'T 40% PAGNY 8h30 (limité 32)'},
+{d:'06-19',e:'06-20',z:'a',c:'ch',t:'CCO T Jeu Provençal Mixte'},
+{d:'06-19',z:'n',c:'c',t:'D 30% ST REMY 14h – Challenge Tintin'},
+{d:'06-24',z:'s',c:'c',t:'TV 40% MARSANNAY 10h – Challenge D. Henry'},
+{d:'06-24',z:'n',c:'c',t:'DV 4P STE COLOMBE 14h'},
+{d:'06-25',z:'a',c:'fr',t:'CDF Tir de précision'},
+{d:'06-26',z:'s',c:'c',t:'Grand Prix de FENAY T Mises + 1150 € 9h'},
+{d:'06-26',z:'s',c:'c',t:'FENAY T 15h Challenge Kerharo Mises + 40% A/B'},
+{d:'06-26',z:'s',c:'c',t:'FENAY Grand Prix Doublette féminin 10h Mises + 50%',n:'Poules A/B'},
+{d:'06-26',z:'n',c:'c',t:'D 30% ST REMY 14h – Challenge Nious'},
+{d:'06-26',e:'06-27',z:'a',c:'fr',t:'CDF TS Masculin et Féminin'},
+{d:'06-29',z:'s',c:'c',t:'DV 4P GENLIS 14h15'},
+
+{d:'07-01',z:'n',c:'c',t:'DV 4P CHATILLON 14h'},
+{d:'07-03',z:'s',c:'c',t:'D 35% CLENAY 10h'},
+{d:'07-03',z:'n',c:'c',t:'D 30% SEMUR 14h'},
+{d:'07-03',e:'07-04',z:'a',c:'bfc',t:'Chpt Régional D Jeu Provençal'},
+{d:'07-06',z:'s',c:'c',t:'DV 4P LAC 14h'},
+{d:'07-08',z:'s',c:'c',t:'DV 4P IS SUR TILLE 14h'},
+{d:'07-10',z:'s',c:'c',t:'D Mises + 40% PAGNY 14h – Challenge BOS – Limité 64 équipes'},
+{d:'07-10',z:'n',c:'c',t:'D 40% MONTBARD 14h – Challenge G. Corcin'},
+{d:'07-10',e:'07-11',z:'a',c:'fr',t:'CDF T Jeunes'},
+{d:'07-14',z:'a',c:'i',t:'Férié'},
+{d:'07-17',z:'n',c:'c',t:'T 40% AIGNAY 10h – Challenge R. Delery'},
+{d:'07-17',e:'07-18',z:'a',c:'fr',t:'CDF TS Mixte'},
+{d:'07-24',z:'n',c:'c',t:'D 30% ST REMY 14h'},
+{d:'07-24',e:'07-25',z:'a',c:'fr',t:'CDF IS Masculin et DS Féminin'},
+{d:'07-30',e:'08-01',z:'a',c:'fr',t:'CDF T Jeu Provençal'},
+{d:'07-31',z:'n',c:'c',t:'Grand Prix Ville de MONTBARD – D Mises + 750 € 10h'},
+
+{d:'08-07',z:'n',c:'c',t:'D 30% STE COLOMBE 14h – Challenge JP Sere'},
+{d:'08-15',z:'a',c:'i',t:'Férié'},
+{d:'08-18',e:'08-19',z:'a',c:'fr',t:'CDF T Vétérans'},
+{d:'08-21',z:'s',c:'c',t:'D 30% BEAUNE 10h – Challenge R. Barlet'},
+{d:'08-21',e:'08-22',z:'a',c:'fr',t:'CDF TS Promotion'},
+{d:'08-26',z:'s',c:'c',t:'DV 4P ASPTT 14h'},
+{d:'08-28',e:'08-29',z:'a',c:'fr',t:'CDF IS Féminin et DS Masculin'},
+
+{d:'09-01',e:'09-02',z:'a',c:'bfc',t:'CRC V1 – CRC V2B'},
+{d:'09-02',z:'n',c:'c',t:'DV 4P STE COLOMBE 14h'},
+{d:'09-04',e:'09-05',z:'a',c:'ch',t:'National Mixte USCVL DMX Mises + 2500 € 9h'},
+{d:'09-04',z:'a',c:'ch',t:'Grand Prix de Venarey DMX 50% 15h30'},
+{d:'09-05',z:'a',c:'ch',t:'Prix du Crédit Mutuel DMX 50% 9h15'},
+{d:'09-04',e:'09-05',z:'a',c:'fr',t:'CDF TJP Mixte'},
+{d:'09-07',z:'s',c:'c',t:'DV 4P GENLIS 14h15'},
+{d:'09-11',z:'s',c:'c',t:'D 30% PONTAILLER 14h – Challenge R. Edouard'},
+{d:'09-11',z:'n',c:'c',t:'D 30% CHATILLON 14h'},
+{d:'09-11',e:'09-12',z:'a',c:'bfc',t:'CRC Jeu Provençal'},
+{d:'09-11',e:'09-12',z:'a',c:'fr',t:'CDF DS Mixte'},
+{d:'09-14',z:'s',c:'c',t:'DV 4P IS SUR TILLE 14h'},
+{d:'09-17',e:'09-19',z:'a',c:'fr',t:'CDF D Jeu Provençal'},
+{d:'09-18',z:'s',c:'c',t:'D 40% MARSANNAY 14h – Challenge J. Durier'},
+{d:'09-18',e:'09-19',z:'a',c:'bfc',t:'CRC Jeunes'},
+{d:'09-21',z:'s',c:'c',t:'DV 4P LAC 14h'},
+{d:'09-24',z:'a',c:'ch',t:'Grand Prix Jean CHARLES'},
+{d:'09-25',e:'09-26',z:'a',c:'ch',t:'National Mixte de DIJON'},
+{d:'09-25',e:'09-26',z:'a',c:'bfc',t:'CRC Jeu Provençal'},
+
+{d:'10-02',e:'10-03',z:'a',c:'k',t:'CDC Journée de réserve'},
+{d:'10-02',z:'n',c:'c',t:'D 30% ST REMY 14h',n:'Uniquement s’il n’y a pas de CDC'},
+{d:'10-05',z:'s',c:'c',t:'DV 4P NEUILLY 14h'},
+{d:'10-09',z:'a',c:'k',t:'Challenge Comité'},
+{d:'10-10',z:'a',c:'k',t:'Marathon Départemental Féminin'},
+{d:'10-16',z:'s',c:'c',t:'D 30% BRAZEY 9h (limité 128 équipes)'},
+{d:'10-16',e:'10-17',z:'a',c:'bfc',t:'CRC1 Open et CRC1 Féminin + CRC2B + CRCF2B'},
+{d:'10-17',z:'s',c:'c',t:'T 30% BRAZEY 9h (limité 128 équipes)'},
+{d:'10-23',e:'10-24',z:'a',c:'k',t:'Grand Prix Jeu Provençal',n:'Boulodrome DIJON'},
+
+{d:'11-01',z:'a',c:'i',t:'Férié'},
+{d:'11-06',z:'s',c:'c',t:'T 30% PAGNY 14h (boulodrome Dijon)'},
+{d:'11-11',z:'a',c:'i',t:'Férié'},
+{d:'11-13',e:'11-14',z:'a',c:'k',t:'Phases finales CDC'},
+{d:'11-20',z:'s',c:'c',t:'D 30% NUITS 10h A/B/C – Challenge Lamonica (boulodrome Dijon)'},
+{d:'11-21',z:'s',c:'c',t:'TMX 30% NUITS 10h A/B/C – Challenge Prest (boulodrome Dijon)'},
+{d:'11-27',z:'a',c:'i',t:'Congrès Départemental'},
+{d:'11-28',z:'a',c:'bfc',t:'Trophée féminin BFC M. Lega'},
+
+{d:'12-04',z:'s',c:'c',t:'T 40% GRESILLES 14h (boulodrome Dijon)'},
+{d:'12-05',z:'s',c:'c',t:'TMX 30% GRESILLES 10h (boulodrome Dijon)'},
+{d:'12-18',z:'s',c:'c',t:'T 30% LAC 10h – Challenge P. Zara'},
+{d:'12-19',z:'s',c:'c',t:'TMX 30% LAC 10h – Challenge Paulette'},
+{d:'12-25',z:'a',c:'i',t:'Noël'}
+];
+
+const YEAR=2027;
+const MONTHS=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+const MSHORT=['Janv','Févr','Mars','Avr','Mai','Juin','Juil','Août','Sept','Oct','Nov','Déc'];
+const DAYS=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+const DAYSL=['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
+const CATS={
+  c:{l:'Concours',v:'--ink'},
+  k:{l:'CDC · Comité · Coupes',v:'--cdc'},
+  ch:{l:'Championnats & Nationaux',v:'--champ'},
+  bfc:{l:'Régionaux BFC & CRC',v:'--bfc'},
+  fr:{l:'Championnats de France',v:'--fr'},
+  i:{l:'Infos & fériés',v:'--info'}
+};
+const ZL={s:'Sud',n:'Nord',a:'Toutes zones'};
+
+const toDate=s=>{const[m,d]=s.split('-').map(Number);return new Date(YEAR,m-1,d)};
+const EV=RAW.map((r,i)=>{
+  const start=toDate(r.d), end=r.e?toDate(r.e):start;
+  const arbs=r.a?r.a.split(/\s*,\s*/):[];
+  return {...r,id:i,start,end,arbs,m:start.getMonth(),
+    hay:(r.t+' '+(r.n||'')+' '+(r.a||'')+' '+CATS[r.c].l).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')};
+});
+
+const now=new Date(); const today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+const sameDay=(a,b)=>a.getTime()===b.getTime();
+
+/* Formule déduite du libellé */
+function formats(t){
+  const f=[]; const s=' '+t+' ';
+  if(/\bTMX\b|Triplette Senior Mixte/.test(s)) f.push('Triplette mixte');
+  else if(/\bDMX\b|D Mixte|Doublette Senior Mixte/.test(s)) f.push('Doublette mixte');
+  else if(/\b(T|TS|TV)\b|Triplette/.test(s)) f.push('Triplette');
+  else if(/\b(D|DV)\b|Doublette/.test(s)) f.push('Doublette');
+  if(/Individuel/i.test(s)&&!f.length) f.push('Individuel');
+  if(/Vétéran|\b(V|TV|DV)\b/.test(s)) f.push('Vétérans');
+  if(/\bD F\b|Féminin/.test(s)) f.push('Féminin');
+  if(/A\/B\/C|\bABC\b/.test(s)) f.push('A/B/C');
+  if(/Provençal/.test(s)) f.push('Jeu provençal');
+  return f;
+}
+
+/* ---------- État ---------- */
+const S={view:'list',zone:'all',cats:new Set(Object.keys(CATS)),q:'',up:false,x:true,calM:today.getFullYear()===YEAR?today.getMonth():0,sel:null};
+try{const saved=JSON.parse(localStorage.getItem('cd21cal2027')||'{}');
+  if(saved.view&&saved.view!=='arb')S.view=saved.view; if(saved.zone)S.zone=saved.zone;
+  if(Array.isArray(saved.cats))S.cats=new Set(saved.cats.filter(c=>CATS[c]));
+  if(typeof saved.up==='boolean')S.up=saved.up; if(typeof saved.x==='boolean')S.x=saved.x;}catch(e){}
+function save(){try{localStorage.setItem('cd21cal2027',JSON.stringify({view:S.view,zone:S.zone,cats:[...S.cats],up:S.up,x:S.x}))}catch(e){}}
+
+function filtered(){
+  const q=S.q.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+  return EV.filter(e=>{
+    if(S.zone!=='all'&&e.z!==S.zone&&e.z!=='a')return false;
+    if(!S.cats.has(e.c))return false;
+    if(!S.x&&e.x)return false;
+    if(S.up&&e.end<today)return false;
+    if(q&&!q.split(/\s+/).every(w=>e.hay.includes(w)))return false;
+    return true;
+  });
+}
+
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmtShort=d=>DAYS[d.getDay()]+' '+d.getDate()+' '+MSHORT[d.getMonth()].toLowerCase();
+
+function card(e){
+  const fm=e.c==='c'?formats(e.t):[];
+  const zt=e.z==='s'?'<span class="tag zs">Sud</span>':e.z==='n'?'<span class="tag zn">Nord</span>':'<span class="tag za">Toutes zones</span>';
+  const ct=e.c!=='c'?`<span class="tag cat" style="--c:var(${CATS[e.c].v})">${CATS[e.c].l}</span>`:'';
+  const rg=e.e?`<span class="range">${fmtShort(e.start)} → ${fmtShort(e.end)}</span>`:'';
+  return `<article class="ev z-${e.z} c-${e.c}${e.x?' cancel':''}">
+    <div class="meta">${zt}${ct}${e.x?'<span class="tag x">Annulé</span>':''}${fm.map(f=>`<span class="tag fmt">${f}</span>`).join('')}${rg}</div>
+    <div class="t">${esc(e.t)}</div>
+    ${e.n?`<div class="n">${esc(e.n)}</div>`:''}
+    ${e.arbs.length?`<div class="arb"><span>Arbitre${e.arbs.length>1?'s':''}</span><div>${e.arbs.map(a=>`<button data-arb="${esc(a)}" title="Voir les désignations">${esc(a)}</button>`).join(', ')}</div></div>`:''}
+  </article>`;
+}
+
+/* ---------- Vues ---------- */
+const main=document.getElementById('main');
+
+function renderList(list){
+  if(!list.length)return emptyMsg();
+  let html='';
+  for(let m=0;m<12;m++){
+    const evs=list.filter(e=>e.m===m); if(!evs.length)continue;
+    const byDay=new Map();
+    evs.forEach(e=>{const k=e.start.getTime();if(!byDay.has(k))byDay.set(k,[]);byDay.get(k).push(e)});
+    const nb=evs.filter(e=>e.c!=='i').length;
+    html+=`<section class="month" id="m-${m}"><h2>${MONTHS[m]} <small>${nb} compétition${nb>1?'s':''}</small></h2>`;
+    [...byDay.keys()].sort((a,b)=>a-b).forEach(k=>{
+      const d=new Date(k), dd=byDay.get(k), wd=d.getDay();
+      const order={a:0,s:1,n:2};
+      dd.sort((a,b)=>order[a.z]-order[b.z]);
+      const past=dd.every(e=>e.end<today);
+      html+=`<div class="day${past?' past':''}${sameDay(d,today)?' today':''}">
+        <div class="dt${wd===0||wd===6?' we':''}"><div class="dn">${DAYS[wd]}</div><div class="dnum num">${String(d.getDate()).padStart(2,'0')}</div></div>
+        <div class="evs">${dd.map(card).join('')}</div></div>`;
+    });
+    html+='</section>';
+  }
+  main.innerHTML=html;
+}
+
+function renderCal(list){
+  const m=S.calM, first=new Date(YEAR,m,1), nd=new Date(YEAR,m+1,0).getDate();
+  const off=(first.getDay()+6)%7;
+  const onDay=d=>list.filter(e=>e.start<=d&&e.end>=d);
+  let g=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'].map(x=>`<div class="gh">${x}</div>`).join('');
+  for(let i=0;i<off;i++)g+='<div class="cell blank" aria-hidden="true"></div>';
+  for(let d=1;d<=nd;d++){
+    const dt=new Date(YEAR,m,d), evs=onDay(dt), wd=dt.getDay();
+    const real=evs.filter(e=>e.c!=='i');
+    const minis=evs.slice(0,3).map(e=>`<div class="mini z-${e.z}${e.x?' cancel':''}">${esc(e.t)}</div>`).join('');
+    g+=`<button class="cell${wd===0||wd===6?' we':''}${sameDay(dt,today)?' today':''}${S.sel===d?' sel':''}" data-d="${d}" aria-label="${DAYSL[wd]} ${d} ${MONTHS[m]} : ${real.length} événement(s)">
+      <span class="cn num">${d}</span>${minis}${evs.length>3?`<span class="more">+${evs.length-3} autre(s)</span>`:''}
+      <span class="dots">${evs.map(e=>`<i class="z-${e.z}"></i>`).join('')}</span></button>`;
+  }
+  let det='';
+  const sd=S.sel?new Date(YEAR,m,S.sel):null;
+  if(sd){const evs=onDay(sd);
+    det=`<div class="dayd"><h3>${DAYSL[sd.getDay()]} ${sd.getDate()} ${MONTHS[m].toLowerCase()}</h3>${evs.length?`<div class="evs">${evs.map(card).join('')}</div>`:'<p style="color:var(--muted)">Aucune compétition ce jour-là avec les filtres actuels.</p>'}</div>`;}
+  main.innerHTML=`<div class="calhead"><button class="nav" id="prev" aria-label="Mois précédent"${m===0?' disabled':''}>‹</button><h2>${MONTHS[m]} ${YEAR}</h2><button class="nav" id="nxt" aria-label="Mois suivant"${m===11?' disabled':''}>›</button></div>
+    <div class="gridwrap"><div class="grid">${g}</div></div>${det}`;
+  document.getElementById('prev').onclick=()=>{if(S.calM>0){S.calM--;S.sel=null;render()}};
+  document.getElementById('nxt').onclick=()=>{if(S.calM<11){S.calM++;S.sel=null;render()}};
+  main.querySelectorAll('.cell[data-d]').forEach(c=>c.onclick=()=>{S.sel=+c.dataset.d;render();document.querySelector('.dayd')?.scrollIntoView({block:'nearest'})});
+}
+
+function renderArb(list){
+  const map=new Map();
+  list.forEach(e=>e.arbs.forEach(a=>{if(!map.has(a))map.set(a,[]);map.get(a).push(e)}));
+  if(!map.size)return emptyMsg('Aucun arbitre désigné','Aucune désignation ne correspond aux filtres.');
+  const arr=[...map.entries()].sort((a,b)=>b[1].length-a[1].length||a[0].localeCompare(b[0]));
+  main.innerHTML=`<div class="arbs">${arr.map(([n,evs])=>{
+    const act=evs.filter(e=>!e.x).length;
+    return `<div class="arbc"><h3>${esc(n)} <span class="num">${act} désignation${act>1?'s':''}${evs.length>act?` · ${evs.length-act} annulée${evs.length-act>1?'s':''}`:''}</span></h3>
+    <ul>${evs.map(e=>`<li class="${e.x?'cancel':''}${e.end<today?' past':''}"><span class="d num">${fmtShort(e.start)}</span><span class="w">${esc(e.t)} <span class="tag ${e.z==='s'?'zs':e.z==='n'?'zn':'za'}">${e.z==='a'?'Toutes':ZL[e.z]}</span></span></li>`).join('')}</ul></div>`}).join('')}</div>`;
+}
+
+function emptyMsg(t='Aucune compétition',s='Modifiez la recherche ou les filtres pour élargir la sélection.'){
+  main.innerHTML=`<div class="empty"><b>${t}</b>${s}</div>`;
+}
+
+/* ---------- Habillage ---------- */
+function header(){
+  const comp=EV.filter(e=>e.c!=='i');
+  const sud=comp.filter(e=>e.z==='s').length, nord=comp.filter(e=>e.z==='n').length, all=comp.filter(e=>e.z==='a').length;
+  const x=comp.filter(e=>e.x).length;
+  const arbs=new Set(); EV.forEach(e=>e.arbs.forEach(a=>arbs.add(a)));
+  document.getElementById('stats').innerHTML=
+    `<span><b>${comp.length}</b>compétitions</span><span><b style="color:var(--sud)">${sud}</b>zone Sud</span><span><b style="color:var(--nord)">${nord}</b>zone Nord</span><span><b>${all}</b>toutes zones</span><span><b style="color:var(--champ)">${comp.filter(e=>e.c==='ch').length}</b>CCO & nationaux</span><span><b style="color:var(--fr)">${comp.filter(e=>e.c==='fr').length}</b>championnats de France</span>`;
+  const nx=EV.filter(e=>e.c!=='i'&&!e.x&&e.end>=today).sort((a,b)=>a.start-b.start);
+  const el=document.getElementById('next');
+  if(!nx.length){el.innerHTML='<div class="lbl">Saison 2027</div><div class="when">Saison terminée</div>';return}
+  const e=nx[0], days=Math.round((e.start-today)/864e5);
+  const same=nx.filter(o=>sameDay(o.start,e.start)).length;
+  el.innerHTML=`<div class="lbl">Prochaine compétition</div>
+    <div class="when">${DAYSL[e.start.getDay()]} ${e.start.getDate()} ${MONTHS[e.start.getMonth()].toLowerCase()}</div>
+    <div class="what">${esc(e.t)}</div>
+    <div class="in">${days<=0?"Aujourd'hui":days===1?'Demain':'Dans '+days+' jours'} · ${ZL[e.z]}${same>1?` · +${same-1} autre(s) ce jour`:''}</div>`;
+}
+
+function controls(){
+  document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.view===S.view));
+  document.querySelectorAll('[data-zone]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.zone===S.zone));
+  document.getElementById('cats').innerHTML=Object.entries(CATS).map(([k,c])=>
+    `<button class="chip" id="cat-${k}" data-cat="${k}" aria-pressed="${S.cats.has(k)}" style="--c:var(${c.v})"><span class="dot"></span>${c.l}</button>`).join('');
+  document.getElementById('t-up').checked=S.up;
+  
+}
+
+function monthsNav(list){
+  const nav=document.getElementById('months');
+  nav.hidden=S.view==='arb';
+  nav.innerHTML=MONTHS.map((n,i)=>{
+    const c=list.filter(e=>e.m===i&&e.c!=='i').length;
+    const cur=S.view==='cal'?i===S.calM:(today.getFullYear()===YEAR&&i===today.getMonth());
+    return `<button data-m="${i}" class="${cur?'cur':''}">${MSHORT[i]}<span class="c num">${c||''}</span></button>`}).join('');
+  nav.querySelectorAll('button').forEach(b=>b.onclick=()=>{
+    const m=+b.dataset.m;
+    if(S.view==='cal'){S.calM=m;S.sel=null;render()}
+    else document.getElementById('m-'+m)?.scrollIntoView({block:'start'});
+  });
+}
+
+function render(){
+  const list=filtered();
+  const n=list.filter(e=>e.c!=='i').length;
+  document.getElementById('count').textContent=`${n} compétition${n>1?'s':''} affichée${n>1?'s':''}`;
+  controls(); monthsNav(list);
+  if(S.view==='list')renderList(list); else if(S.view==='cal')renderCal(list); else renderArb(list);
+  save();
+}
+
+/* ---------- Événements ---------- */
+document.getElementById('bar').addEventListener('click',ev=>{
+  const b=ev.target.closest('button'); if(!b)return;
+  if(b.dataset.view){S.view=b.dataset.view;render();}
+  else if(b.dataset.zone){S.zone=b.dataset.zone;render();}
+  else if(b.dataset.cat){const k=b.dataset.cat;
+    if(S.cats.has(k)&&S.cats.size===1)S.cats=new Set(Object.keys(CATS));
+    else if(S.cats.has(k))S.cats.delete(k); else S.cats.add(k); render();}
+});
+document.getElementById('q').addEventListener('input',e=>{S.q=e.target.value;render()});
+document.getElementById('t-up').addEventListener('change',e=>{S.up=e.target.checked;render()});
+
+main.addEventListener('click',ev=>{
+  const b=ev.target.closest('[data-arb]'); if(!b)return;
+  S.q=b.dataset.arb; document.getElementById('q').value=S.q; S.view='list'; render();
+  window.scrollTo({top:document.getElementById('bar').offsetTop,behavior:'smooth'});
+});
+
+header(); render();
+</script>
+
+</body>
+</html>
