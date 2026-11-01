@@ -203,6 +203,23 @@ details.lex summary{cursor:pointer;font-family:var(--f-brand);font-weight:400;fo
 .lexg div{display:flex;gap:8px}.lexg b{min-width:54px;font-family:var(--f-display);font-size:17px}
 .foot{margin-top:18px;font-size:12px;color:var(--muted)}
 
+/* Affiches */
+.poster-btn{margin-top:8px;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--sud);background:var(--surface);color:var(--sud);border-radius:999px;padding:4px 12px 4px 10px;font-size:13px;font-weight:600;cursor:pointer}
+.poster-btn:hover{background:var(--sud-soft)}
+.poster-btn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2}
+.cell .mini.has-poster::after{content:" ▣";color:var(--sud)}
+dialog.poster{border:0;padding:0;background:transparent;max-width:min(94vw,720px);max-height:94vh;width:100%;color:var(--ink)}
+dialog.poster::backdrop{background:rgba(10,12,16,.78)}
+.poster .box{background:var(--surface);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;max-height:94vh}
+.poster .hd{display:flex;align-items:center;gap:10px;padding:10px 12px 10px 16px;border-bottom:1px solid var(--line)}
+.poster .hd b{flex:1;min-width:0;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.poster .hd button{border:0;background:var(--surface-2);border-radius:8px;width:34px;height:34px;font-size:20px;cursor:pointer;color:var(--ink)}
+.poster .img{overflow:auto;background:var(--surface-2);display:flex;justify-content:center;min-height:200px}
+.poster .img img{display:block;max-width:100%;height:auto}
+.poster .msg{padding:40px 20px;text-align:center;color:var(--muted)}
+.poster .ft{padding:10px 16px;border-top:1px solid var(--line);font-size:13px}
+.poster .ft a{color:var(--sud);font-weight:600}
+
 /* Concours du club */
 .ev.club{background:linear-gradient(90deg,var(--sud-soft),var(--surface) 75%);border-color:var(--sud)}
 .tag.clubt{background:var(--brand);color:var(--on-brand)}
@@ -271,6 +288,11 @@ details.lex summary{cursor:pointer;font-family:var(--f-brand);font-weight:400;fo
   </div>
 
   <main id="main"></main>
+  <dialog class="poster" id="poster" aria-label="Affiche de la compétition"><div class="box">
+    <div class="hd"><b id="poster-t"></b><button type="button" id="poster-x" aria-label="Fermer">×</button></div>
+    <div class="img" id="poster-img"></div>
+    <div class="ft"><a id="poster-a" href="#" target="_blank" rel="noopener">Ouvrir l'affiche dans un nouvel onglet</a></div>
+  </div></dialog>
 
   <details class="lex">
     <summary>Abréviations</summary>
@@ -546,6 +568,7 @@ function card(e){
     <div class="meta">${e.club?'<span class="tag clubt">Le Carreau</span>':''}${zt}${ct}${e.x?'<span class="tag x">Annulé</span>':''}${fm.map(f=>`<span class="tag fmt">${f}</span>`).join('')}${rg}</div>
     <div class="t">${esc(e.t)}</div>
     ${e.n?`<div class="n">${esc(e.n)}</div>`:''}
+    ${e.p?`<button class="poster-btn" data-poster="${e.id}"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="m4 16 5-5 4 4 3-3 4 4"/><circle cx="15" cy="8" r="1.6"/></svg>Voir l'affiche</button>`:''}
     ${e.arbs.length?`<div class="arb"><span>Arbitre${e.arbs.length>1?'s':''}</span><div>${e.arbs.map(a=>`<button data-arb="${esc(a)}" title="Voir les désignations">${esc(a)}</button>`).join(', ')}</div></div>`:''}
   </article>`;
 }
@@ -586,7 +609,7 @@ function renderCal(list){
   for(let d=1;d<=nd;d++){
     const dt=new Date(CY,CM,d), evs=onDay(dt), wd=dt.getDay();
     const real=evs.filter(e=>e.c!=='i');
-    const minis=evs.slice(0,3).map(e=>`<div class="mini z-${e.z}${e.x?' cancel':''}${e.club?' club':''}">${esc(e.t)}</div>`).join('');
+    const minis=evs.slice(0,3).map(e=>`<div class="mini z-${e.z}${e.x?' cancel':''}${e.club?' club':''}${e.p?' has-poster':''}">${esc(e.t)}</div>`).join('');
     g+=`<button class="cell${wd===0||wd===6?' we':''}${sameDay(dt,today)?' today':''}${S.sel===d?' sel':''}" data-d="${d}" aria-label="${DAYSL[wd]} ${d} ${MONTHS[CM]} : ${real.length} événement(s)">
       <span class="cn num">${d}</span>${minis}${evs.length>3?`<span class="more">+${evs.length-3} autre(s)</span>`:''}
       <span class="dots">${evs.map(e=>`<i class="z-${e.z}"></i>`).join('')}</span></button>`;
@@ -701,7 +724,29 @@ document.getElementById('t-up').addEventListener('change',e=>{S.up=e.target.chec
 document.getElementById('t-x').addEventListener('change',e=>{S.x=e.target.checked;render()});
 document.getElementById('t-club').addEventListener('change',e=>{S.club=e.target.checked;render()});
 
+/* ---------- Affiches ---------- */
+function posterSrc(u){
+  const m=u.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:export=\w+&)?id=)([\w-]{20,})/);
+  if(m)return{img:'https://drive.google.com/thumbnail?id='+m[1]+'&sz=w2000',open:'https://drive.google.com/file/d/'+m[1]+'/view'};
+  if(/\.pdf(\?|#|$)/i.test(u))return{img:null,open:u};
+  return{img:u,open:u};
+}
+function openPoster(e){
+  const d=document.getElementById('poster'), box=document.getElementById('poster-img'), src=posterSrc(e.p);
+  document.getElementById('poster-t').textContent=fmtShort(e.start)+' · '+e.t;
+  document.getElementById('poster-a').href=src.open;
+  box.innerHTML='';
+  if(src.img){const im=new Image(); im.alt='Affiche : '+e.t; im.referrerPolicy='no-referrer';
+    im.onerror=()=>{box.innerHTML='<div class="msg">L\'affiche ne peut pas être affichée ici. Vérifiez que le fichier est partagé à « Tous les utilisateurs disposant du lien », ou ouvrez-la avec le lien ci-dessous.</div>'};
+    im.src=src.img; box.appendChild(im);}
+  else box.innerHTML='<div class="msg">Cette affiche est un PDF : ouvrez-la avec le lien ci-dessous.</div>';
+  if(d.showModal)d.showModal(); else d.setAttribute('open','');
+}
+document.getElementById('poster-x').addEventListener('click',()=>document.getElementById('poster').close());
+document.getElementById('poster').addEventListener('click',ev=>{if(ev.target.id==='poster')ev.target.close()});
 main.addEventListener('click',ev=>{
+  const pb=ev.target.closest('[data-poster]');
+  if(pb){const e=EV.find(x=>x.id===+pb.dataset.poster); if(e)openPoster(e); return;}
   const b=ev.target.closest('[data-arb]'); if(!b)return;
   S.q=b.dataset.arb; document.getElementById('q').value=S.q; S.view='list'; render();
   window.scrollTo({top:document.getElementById('bar').offsetTop,behavior:'smooth'});
@@ -736,7 +781,7 @@ function gsZone(s){const v=gsNorm(s);return v.startsWith('sud')?'s':v.startsWith
 function gsToRaw(rows){
   const h=(rows[0]||[]).map(gsNorm), find=fn=>h.findIndex(fn);
   const ci={d:find(x=>x.startsWith('date')&&!x.includes('fin')),e:find(x=>x.includes('fin')),z:find(x=>x.startsWith('zone')),
-    c:find(x=>x.startsWith('categ')),t:find(x=>x.startsWith('compet')),n:find(x=>x.startsWith('preci')),a:find(x=>x.startsWith('arbit')),x:find(x=>x.startsWith('annul'))};
+    c:find(x=>x.startsWith('categ')),t:find(x=>x.startsWith('compet')),n:find(x=>x.startsWith('preci')),a:find(x=>x.startsWith('arbit')),x:find(x=>x.startsWith('annul')),p:find(x=>x.startsWith('affiche')||x.startsWith('lien'))};
   const out=[],years={};
   rows.slice(1).forEach(r=>{const g=k=>ci[k]>=0?String(r[ci[k]]||'').trim():'';
     const d=gsDate(g('d')),t=g('t'); if(!d||!t)return;
@@ -746,6 +791,7 @@ function gsToRaw(rows){
     if(g('n'))o.n=g('n');
     if(g('a'))o.a=g('a').split(/\s*[,;\/]\s*/).filter(Boolean).join(', ');
     if(/^(oui|o|x|1|annul|vrai|true)/i.test(g('x')))o.x=1;
+    if(/^https?:\/\//i.test(g('p')))o.p=g('p');
     out.push(o)});
   const y=+Object.keys(years).sort((a,b)=>years[b]-years[a])[0];
   return{year:y,raw:out};
