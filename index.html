@@ -101,6 +101,7 @@ h1 .yr{color:var(--sud)}
 .months button{flex:0 0 auto;border:0;background:transparent;font-family:var(--f-display);font-weight:600;font-size:16px;text-transform:uppercase;letter-spacing:.04em;padding:4px 9px;border-radius:6px;cursor:pointer;color:var(--muted)}
 .months button:hover{background:var(--surface-2);color:var(--ink)}
 .months button.cur{color:var(--ink);background:var(--surface)}
+.months button .yy{font-family:var(--f-body);font-size:11px;font-weight:600;margin-left:1px}
 .months button .c{font-family:var(--f-body);font-size:11px;font-weight:600;margin-left:3px;color:var(--muted)}
 .count{font-size:13px;color:var(--muted);margin-left:auto}
 
@@ -479,11 +480,17 @@ const CATS={
 };
 const ZL={s:'Sud',n:'Nord',a:'Toutes zones'};
 
-const toDate=s=>{const[m,d]=s.split('-').map(Number);return new Date(YEAR,m-1,d)};
+const toDate=(s,y)=>{const[m,d]=s.split('-').map(Number);return new Date(y||YEAR,m-1,d)};
+const mkOf=d=>d.getFullYear()*12+d.getMonth();
+function monthRange(){ // tous les mois de la saison, y compris ceux d'une autre année (ex. oct.-nov. 2026)
+  let lo=YEAR*12, hi=YEAR*12+11;
+  EV.forEach(e=>{lo=Math.min(lo,e.m); hi=Math.max(hi,mkOf(e.end))});
+  const r=[]; for(let k=lo;k<=hi;k++)r.push(k); return r;}
+const monthLabel=k=>MONTHS[k%12]+(Math.floor(k/12)!==YEAR?' '+Math.floor(k/12):'');
 function buildEV(raw){return raw.map((r,i)=>{
-  const start=toDate(r.d), end=r.e?toDate(r.e):start;
+  const start=toDate(r.d,r.y), end=r.e?toDate(r.e,r.ey||r.y):start;
   const arbs=r.a?r.a.split(/\s*,\s*/):[];
-  return {...r,id:i,start,end,arbs,m:start.getMonth(),club:/MARSANNAY/i.test(r.t),
+  return {...r,id:i,start,end,arbs,m:mkOf(start),club:/MARSANNAY/i.test(r.t),
     hay:(r.t+' '+(r.n||'')+' '+(r.a||'')+' '+CATS[r.c].l).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')};
 });}
 let EV=buildEV(RAW);
@@ -507,7 +514,7 @@ function formats(t){
 }
 
 /* ---------- État ---------- */
-const S={view:'list',zone:'all',cats:new Set(Object.keys(CATS)),q:'',up:false,club:false,x:true,calM:today.getFullYear()===YEAR?today.getMonth():0,sel:null};
+const S={view:'list',zone:'all',cats:new Set(Object.keys(CATS)),q:'',up:false,club:false,x:true,calM:today.getFullYear()*12+today.getMonth(),sel:null};
 try{const saved=JSON.parse(localStorage.getItem('carreau2027')||'{}');
   if(saved.view)S.view=saved.view; if(saved.zone)S.zone=saved.zone;
   if(Array.isArray(saved.cats))S.cats=new Set(saved.cats.filter(c=>CATS[c]).concat('i'));
@@ -549,12 +556,12 @@ const main=document.getElementById('main');
 function renderList(list){
   if(!list.length)return emptyMsg();
   let html='';
-  for(let m=0;m<12;m++){
+  for(const m of monthRange()){
     const evs=list.filter(e=>e.m===m); if(!evs.length)continue;
     const byDay=new Map();
     evs.forEach(e=>{const k=e.start.getTime();if(!byDay.has(k))byDay.set(k,[]);byDay.get(k).push(e)});
     const nb=evs.filter(e=>e.c!=='i').length;
-    html+=`<section class="month" id="m-${m}"><h2>${MONTHS[m]} <small>${nb} compétition${nb>1?'s':''}</small></h2>`;
+    html+=`<section class="month" id="m-${m}"><h2>${monthLabel(m)} <small>${nb} compétition${nb>1?'s':''}</small></h2>`;
     [...byDay.keys()].sort((a,b)=>a-b).forEach(k=>{
       const d=new Date(k), dd=byDay.get(k), wd=d.getDay();
       const order={a:0,s:1,n:2};
@@ -570,27 +577,28 @@ function renderList(list){
 }
 
 function renderCal(list){
-  const m=S.calM, first=new Date(YEAR,m,1), nd=new Date(YEAR,m+1,0).getDate();
+  const R=monthRange(); if(!R.includes(S.calM))S.calM=R[0];
+  const m=S.calM, CY=Math.floor(m/12), CM=m%12, first=new Date(CY,CM,1), nd=new Date(CY,CM+1,0).getDate();
   const off=(first.getDay()+6)%7;
   const onDay=d=>list.filter(e=>e.start<=d&&e.end>=d);
   let g=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'].map(x=>`<div class="gh">${x}</div>`).join('');
   for(let i=0;i<off;i++)g+='<div class="cell blank" aria-hidden="true"></div>';
   for(let d=1;d<=nd;d++){
-    const dt=new Date(YEAR,m,d), evs=onDay(dt), wd=dt.getDay();
+    const dt=new Date(CY,CM,d), evs=onDay(dt), wd=dt.getDay();
     const real=evs.filter(e=>e.c!=='i');
     const minis=evs.slice(0,3).map(e=>`<div class="mini z-${e.z}${e.x?' cancel':''}${e.club?' club':''}">${esc(e.t)}</div>`).join('');
-    g+=`<button class="cell${wd===0||wd===6?' we':''}${sameDay(dt,today)?' today':''}${S.sel===d?' sel':''}" data-d="${d}" aria-label="${DAYSL[wd]} ${d} ${MONTHS[m]} : ${real.length} événement(s)">
+    g+=`<button class="cell${wd===0||wd===6?' we':''}${sameDay(dt,today)?' today':''}${S.sel===d?' sel':''}" data-d="${d}" aria-label="${DAYSL[wd]} ${d} ${MONTHS[CM]} : ${real.length} événement(s)">
       <span class="cn num">${d}</span>${minis}${evs.length>3?`<span class="more">+${evs.length-3} autre(s)</span>`:''}
       <span class="dots">${evs.map(e=>`<i class="z-${e.z}"></i>`).join('')}</span></button>`;
   }
   let det='';
-  const sd=S.sel?new Date(YEAR,m,S.sel):null;
+  const sd=S.sel?new Date(CY,CM,S.sel):null;
   if(sd){const evs=onDay(sd);
-    det=`<div class="dayd"><h3>${DAYSL[sd.getDay()]} ${sd.getDate()} ${MONTHS[m].toLowerCase()}</h3>${evs.length?`<div class="evs">${evs.map(card).join('')}</div>`:'<p style="color:var(--muted)">Aucune compétition ce jour-là avec les filtres actuels.</p>'}</div>`;}
-  main.innerHTML=`<div class="calhead"><button class="nav" id="prev" aria-label="Mois précédent"${m===0?' disabled':''}>‹</button><h2>${MONTHS[m]} ${YEAR}</h2><button class="nav" id="nxt" aria-label="Mois suivant"${m===11?' disabled':''}>›</button></div>
+    det=`<div class="dayd"><h3>${DAYSL[sd.getDay()]} ${sd.getDate()} ${MONTHS[CM].toLowerCase()}</h3>${evs.length?`<div class="evs">${evs.map(card).join('')}</div>`:'<p style="color:var(--muted)">Aucune compétition ce jour-là avec les filtres actuels.</p>'}</div>`;}
+  main.innerHTML=`<div class="calhead"><button class="nav" id="prev" aria-label="Mois précédent"${m===R[0]?' disabled':''}>‹</button><h2>${MONTHS[CM]} ${CY}</h2><button class="nav" id="nxt" aria-label="Mois suivant"${m===R[R.length-1]?' disabled':''}>›</button></div>
     <div class="gridwrap"><div class="grid">${g}</div></div>${det}`;
-  document.getElementById('prev').onclick=()=>{if(S.calM>0){S.calM--;S.sel=null;render()}};
-  document.getElementById('nxt').onclick=()=>{if(S.calM<11){S.calM++;S.sel=null;render()}};
+  document.getElementById('prev').onclick=()=>{if(S.calM>R[0]){S.calM--;S.sel=null;render()}};
+  document.getElementById('nxt').onclick=()=>{if(S.calM<R[R.length-1]){S.calM++;S.sel=null;render()}};
   main.querySelectorAll('.cell[data-d]').forEach(c=>c.onclick=()=>{S.sel=+c.dataset.d;render();document.querySelector('.dayd')?.scrollIntoView({block:'nearest'})});
 }
 
@@ -652,10 +660,10 @@ function controls(){
 function monthsNav(list){
   const nav=document.getElementById('months');
   nav.hidden=S.view==='arb';
-  nav.innerHTML=MONTHS.map((n,i)=>{
+  nav.innerHTML=monthRange().map(i=>{
     const c=list.filter(e=>e.m===i&&e.c!=='i').length;
-    const cur=S.view==='cal'?i===S.calM:(today.getFullYear()===YEAR&&i===today.getMonth());
-    return `<button data-m="${i}" class="${cur?'cur':''}">${MSHORT[i]}<span class="c num">${c||''}</span></button>`}).join('');
+    const cur=S.view==='cal'?i===S.calM:i===mkOf(today);
+    return `<button data-m="${i}" class="${cur?'cur':''}">${MSHORT[i%12]}${Math.floor(i/12)!==YEAR?'<small class="yy">’'+String(Math.floor(i/12)).slice(2)+'</small>':''}<span class="c num">${c||''}</span></button>`}).join('');
   nav.querySelectorAll('button').forEach(b=>b.onclick=()=>{
     const m=+b.dataset.m;
     if(S.view==='cal'){S.calM=m;S.sel=null;render()}
@@ -734,13 +742,13 @@ function gsToRaw(rows){
     const d=gsDate(g('d')),t=g('t'); if(!d||!t)return;
     const e=gsDate(g('e')); years[d.y]=(years[d.y]||0)+1;
     const o={y:d.y,d:gsPad(d.m)+'-'+gsPad(d.d),z:gsZone(g('z')),c:gsCat(g('c')),t};
-    if(e&&e.y===d.y&&(e.m!==d.m||e.d!==d.d))o.e=gsPad(e.m)+'-'+gsPad(e.d);
+    if(e&&(e.y!==d.y||e.m!==d.m||e.d!==d.d)){o.e=gsPad(e.m)+'-'+gsPad(e.d); if(e.y!==d.y)o.ey=e.y;}
     if(g('n'))o.n=g('n');
     if(g('a'))o.a=g('a').split(/\s*[,;\/]\s*/).filter(Boolean).join(', ');
     if(/^(oui|o|x|1|annul|vrai|true)/i.test(g('x')))o.x=1;
     out.push(o)});
   const y=+Object.keys(years).sort((a,b)=>years[b]-years[a])[0];
-  return{year:y,raw:out.filter(o=>o.y===y)};
+  return{year:y,raw:out};
 }
 const DATA_DATE=new Date(2026,9,30,12,0); // date des données intégrées au fichier
 const gsStamp=t=>gsPad(t.getDate())+'/'+gsPad(t.getMonth()+1)+'/'+t.getFullYear()+' à '+gsPad(t.getHours())+'h'+gsPad(t.getMinutes());
