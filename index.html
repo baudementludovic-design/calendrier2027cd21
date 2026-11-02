@@ -237,7 +237,36 @@ dialog.poster::backdrop{background:rgba(10,12,16,.78)}
 .tag.clubt{background:var(--brand);color:var(--on-brand)}
 .cell .mini.club{background:var(--sud-soft);font-weight:600}
 @media (max-width:900px){.top{grid-template-columns:auto minmax(0,1fr)}.top .next{grid-column:1/-1;max-width:none}}
+/* Bouton Filtres (téléphone) et compteur des cases */
+.ftoggle{display:none;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+.ftoggle svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round}
+.ftoggle.on{border-color:var(--sud);color:var(--sud);background:var(--sud-soft)}
+.cell .cb{display:none;margin-top:auto;align-items:flex-end;justify-content:space-between;gap:2px;min-height:14px}
+.cell .cnt{display:none;font-size:10px;font-weight:700;line-height:1;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:var(--ink);color:var(--surface);align-items:center;justify-content:center}
+.src-m{display:none}
+.seg .vi{display:none;width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
 @media (max-width:720px){
+  .bar{padding-block:8px 6px;gap:8px;margin-top:10px}
+  .bar .row.main{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px;align-items:center}
+  .bar .row.main .search{grid-column:1;grid-row:1;min-width:0}
+  .bar .row.main #seg-view{grid-column:2;grid-row:1}
+  .bar .row.main .ftoggle{grid-column:3;grid-row:1;display:inline-flex}
+  .bar .row.main #seg-zone{grid-column:1/-1;grid-row:2;justify-self:start;display:none}
+  .bar.fopen .row.main #seg-zone{display:inline-flex}
+  #cats,#row-opts{display:none}
+  .bar.fopen #cats,.bar.fopen #row-opts{display:flex}
+  #row-opts .src{display:none}
+  .seg button{padding:6px 10px;font-size:13px}
+  #seg-view button{padding:6px 9px;display:inline-flex;align-items:center}
+  #seg-view .vi{display:block}
+  #seg-view .vt{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  .search input{padding-block:7px;font-size:16px}
+  .months button{font-size:15px;padding:3px 8px}
+  .src-m{display:flex;justify-content:flex-end;margin-top:8px}
+  .src-m .src{margin-left:0}
+  .cell .cb{display:flex}
+  .cell .cnt{display:inline-flex}
+  .cell .cn{font-size:15px}
   .top{grid-template-columns:minmax(0,1fr);padding:18px}
   .logo{width:84px}
   .top{grid-template-columns:auto minmax(0,1fr);column-gap:14px;row-gap:12px}
@@ -251,7 +280,6 @@ dialog.poster::backdrop{background:rgba(10,12,16,.78)}
   .dots{display:flex}
   .day{grid-template-columns:46px minmax(0,1fr);gap:10px}
   .dt .dnum{font-size:28px}
-  .month{scroll-margin-top:240px}
 }
 @media (prefers-reduced-motion:no-preference){
   .ev,.cell{transition:transform .15s ease,box-shadow .15s ease}
@@ -272,24 +300,26 @@ dialog.poster::backdrop{background:rgba(10,12,16,.78)}
     </div>
     <aside class="next" id="next" aria-live="polite"></aside>
   </header>
+  <div class="src-m" id="src-m"></div>
 
   <div class="bar" id="bar">
-    <div class="row">
-      <div class="seg" role="group" aria-label="Affichage">
-        <button id="v-list" data-view="list">Liste</button>
-        <button id="v-cal" data-view="cal">Mois</button>
-        <button id="v-arb" data-view="arb" hidden>Arbitres</button>
+    <div class="row main">
+      <div class="seg" id="seg-view" role="group" aria-label="Affichage">
+        <button id="v-list" data-view="list" aria-label="Liste"><svg class="vi" viewBox="0 0 24 24"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg><span class="vt">Liste</span></button>
+        <button id="v-cal" data-view="cal" aria-label="Mois"><svg class="vi" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><span class="vt">Mois</span></button>
+        <button id="v-arb" data-view="arb" aria-label="Arbitres" hidden><svg class="vi" viewBox="0 0 24 24"><circle cx="12" cy="7.5" r="3.5"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/></svg><span class="vt">Arbitres</span></button>
       </div>
-      <div class="seg" role="group" aria-label="Zone">
+      <div class="seg" id="seg-zone" role="group" aria-label="Zone">
         <button id="z-all" data-zone="all">Toutes zones</button>
         <button id="z-s" data-zone="s">Sud</button>
         <button id="z-n" data-zone="n">Nord</button>
       </div>
       <label class="search"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
         <input id="q" type="search" placeholder="Club, ville, challenge, championnat…" aria-label="Rechercher"></label>
+      <button type="button" class="ftoggle" id="ftoggle" aria-expanded="false" aria-controls="cats"><svg viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4"/></svg><span id="ftoggle-l">Filtres</span></button>
     </div>
     <div class="row" id="cats"><details class="dd" id="dd-cats"><summary><span class="lbl">Catégories :</span> <span id="dd-sum">Toutes</span></summary><div class="panel" id="dd-panel"></div></details></div>
-    <div class="row">
+    <div class="row" id="row-opts">
       <label class="toggle"><input type="checkbox" id="t-up"> À venir uniquement</label>
       <label class="toggle" id="lbl-x" hidden><input type="checkbox" id="t-x" checked> Afficher les annulés</label>
       <label class="toggle"><input type="checkbox" id="t-club"> Concours du Carreau uniquement</label>
@@ -633,7 +663,7 @@ function renderCal(list){
     const minis=evs.slice(0,3).map(e=>`<div class="mini z-${e.z}${e.x?' cancel':''}${e.club?' club':''}${e.p?' has-poster':''}">${esc(e.t)}</div>`).join('');
     g+=`<button class="cell${wd===0||wd===6?' we':''}${sameDay(dt,today)?' today':''}${S.sel===d?' sel':''}" data-d="${d}" aria-label="${DAYSL[wd]} ${d} ${MONTHS[CM]} : ${real.length} événement(s)">
       <span class="cn num">${d}</span>${minis}${evs.length>3?`<span class="more">+${evs.length-3} autre(s)</span>`:''}
-      <span class="dots">${evs.map(e=>`<i class="z-${e.z}"></i>`).join('')}</span></button>`;
+      <span class="cb"><span class="dots">${evs.map(e=>`<i class="z-${e.z}"></i>`).join('')}</span>${real.length?`<span class="cnt num" title="${real.length} compétition(s)">${real.length}</span>`:''}</span></button>`;
   }
   let det='';
   const sd=S.sel?new Date(CY,CM,S.sel):null;
@@ -706,17 +736,47 @@ function monthsNav(list){
   nav.hidden=S.view==='arb';
   nav.innerHTML=monthRange().map(i=>{
     const c=list.filter(e=>e.m===i&&e.c!=='i').length;
-    const cur=S.view==='cal'?i===S.calM:i===mkOf(today);
+    const cur=i===S.calM;
     return `<button data-m="${i}" class="${cur?'cur':''}">${MSHORT[i%12]}${Math.floor(i/12)!==YEAR?'<small class="yy">’'+String(Math.floor(i/12)).slice(2)+'</small>':''}<span class="c num">${c||''}</span></button>`}).join('');
   nav.querySelectorAll('button').forEach(b=>b.onclick=()=>{
     const m=+b.dataset.m;
     if(S.view==='cal'){S.calM=m;S.sel=null;render()}
-    else document.getElementById('m-'+m)?.scrollIntoView({block:'start'});
+    else{S.calM=m;markMonth();scrollToMonth(m);}
   });
+  markMonth();
 }
+function markMonth(){
+  const nav=document.getElementById('months');
+  nav.querySelectorAll('button').forEach(b=>b.classList.toggle('cur',+b.dataset.m===S.calM));
+  const c=nav.querySelector('.cur');
+  if(c){const l=c.offsetLeft-nav.offsetLeft, r=l+c.offsetWidth;
+    if(l<nav.scrollLeft||r>nav.scrollLeft+nav.clientWidth)nav.scrollTo({left:l-nav.clientWidth/2+c.offsetWidth/2,behavior:'smooth'});}
+}
+function scrollToMonth(m){
+  const secs=[...document.querySelectorAll('.month')]; if(!secs.length)return;
+  const el=secs.find(x=>+x.id.slice(2)>=m)||secs[secs.length-1];
+  const bar=document.getElementById('bar');
+  spyLock=Date.now()+900;
+  window.scrollTo({top:el.getBoundingClientRect().top+window.scrollY-bar.offsetHeight-6,behavior:'smooth'});
+}
+let spyLock=0, spyTick=false;
+window.addEventListener('scroll',()=>{
+  if(S.view!=='list'||spyTick||Date.now()<spyLock)return; spyTick=true;
+  requestAnimationFrame(()=>{spyTick=false;
+    const lim=document.getElementById('bar').getBoundingClientRect().bottom+12; let k=null;
+    document.querySelectorAll('.month').forEach(x=>{if(x.getBoundingClientRect().top<=lim)k=+x.id.slice(2)});
+    if(k!==null&&k!==S.calM){S.calM=k;markMonth();}
+  });
+},{passive:true});
 
+function filterCount(){
+  const keys=Object.keys(CATS).filter(k=>k!=='i');
+  return (S.zone!=='all')+(!keys.every(k=>S.cats.has(k)))+S.up+S.club+(EV.some(e=>e.x)&&!S.x);
+}
 function render(){
   const list=filtered();
+  const fc=filterCount(); document.getElementById('ftoggle-l').textContent=fc?'Filtres · '+fc:'Filtres';
+  document.getElementById('ftoggle').classList.toggle('on',fc>0);
   const n=list.filter(e=>e.c!=='i').length;
   controls(); monthsNav(list);
   if(S.view==='list')renderList(list); else if(S.view==='cal')renderCal(list); else renderArb(list);
@@ -726,7 +786,8 @@ function render(){
 /* ---------- Événements ---------- */
 document.getElementById('bar').addEventListener('click',ev=>{
   const b=ev.target.closest('button'); if(!b)return;
-  if(b.dataset.view){S.view=b.dataset.view;render();}
+  if(b.id==='ftoggle'){const bar=document.getElementById('bar'), o=bar.classList.toggle('fopen'); b.setAttribute('aria-expanded',o); return;}
+  if(b.dataset.view){const was=S.view; S.view=b.dataset.view; S.sel=null; render(); if(S.view==='list'&&was!=='list')scrollToMonth(S.calM);}
   else if(b.dataset.zone){S.zone=b.dataset.zone;render();}
   else if(b.dataset.cat){const k=b.dataset.cat;
     if(S.cats.has(k)&&[...S.cats].filter(c=>c!=='i').length===1)S.cats=new Set(Object.keys(CATS));
@@ -830,6 +891,9 @@ function gsApply(text){const rows0=gsParseCSV(text); const {year,raw}=gsToRaw(ro
 function gsStale(src,when,why){
   src.textContent='Dernière mise à jour le '+gsStamp(when); src.className='src err';
   if(why)src.title='Google Sheets inaccessible : '+why;}
+(function(){const a=document.getElementById('src'), b=document.getElementById('src-m');
+  const copy=()=>{b.innerHTML='';const c=a.cloneNode(true);c.removeAttribute('id');b.appendChild(c)};
+  new MutationObserver(copy).observe(a,{childList:true,characterData:true,subtree:true,attributes:true}); copy();})();
 async function loadSheet(){
   const src=document.getElementById('src');
   if(!SHEET_CSV_URL){gsStale(src,DATA_DATE);return}
@@ -851,6 +915,7 @@ async function loadSheet(){
   }
 }
 
+try{if(matchMedia('(max-width:720px)').matches)document.getElementById('q').placeholder='Chercher…';}catch(e){}
 header(); render(); loadSheet();
 if('serviceWorker' in navigator && location.protocol==='https:'){navigator.serviceWorker.register('sw.js').catch(e=>console.warn('Service worker non enregistré',e));}
 </script>
