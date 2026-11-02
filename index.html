@@ -150,9 +150,12 @@ h1 .yr{color:var(--sud)}
 .tag.x{background:var(--cdc);color:var(--surface)}
 .ev .t{font-weight:600;overflow-wrap:anywhere}
 .ev .n{font-size:13px;color:var(--muted);margin-top:2px}
-.ev .arb{font-size:13px;color:var(--nord);margin-top:4px;display:flex;gap:6px;align-items:baseline}
-.ev .arb span{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:600}
-.ev .arb button{border:0;background:none;padding:0;color:inherit;cursor:pointer;text-decoration:underline;text-decoration-color:color-mix(in srgb,currentColor 35%,transparent);text-underline-offset:2px}
+.ev .arb,.next .arb{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.ref{display:inline-flex;align-items:center;gap:7px;padding:3px 11px 3px 3px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);font-size:13px;color:var(--ink);line-height:1.2}
+.ref .ic{width:22px;height:22px;border-radius:50%;background:var(--brand-ink);display:grid;place-items:center;flex:none}
+.ref .ic svg{width:13px;height:13px;stroke:var(--on-brand);fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.ref .rl{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--sud)}
+.ref .rn{font-weight:600}
 .ev.cancel .t{text-decoration:line-through;text-decoration-thickness:1.5px;color:var(--muted)}
 .ev.c-k .t{color:var(--cdc)} .ev.c-ch .t{color:var(--champ)} .ev.c-bfc .t{color:var(--bfc)} .ev.c-fr .t{color:var(--fr)}
 .ev.c-fr{background:linear-gradient(90deg,var(--fr-soft),var(--surface) 70%)}
@@ -195,6 +198,10 @@ h1 .yr{color:var(--sud)}
 .arbc li .d{color:var(--muted)}
 .arbc li.cancel .w{text-decoration:line-through;color:var(--muted)}
 .arbc li.past{opacity:.55}
+.arbc .go{border:0;background:none;padding:0;font:inherit;color:var(--ink);text-align:left;cursor:pointer;text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--sud) 45%,transparent);text-underline-offset:3px}
+.arbc .go:hover{color:var(--sud);text-decoration-color:var(--sud)}
+.ev.flash{animation:evflash 1.8s ease}
+@keyframes evflash{0%,30%{box-shadow:0 0 0 3px var(--sud)}100%{box-shadow:0 0 0 0 transparent}}
 
 /* Lexique */
 details.lex{margin-top:36px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 16px}
@@ -244,6 +251,7 @@ dialog.poster::backdrop{background:rgba(10,12,16,.78)}
 .cell .cb{display:none;margin-top:auto;align-items:flex-end;justify-content:space-between;gap:2px;min-height:14px}
 .cell .cnt{display:none;font-size:10px;font-weight:700;line-height:1;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:var(--ink);color:var(--surface);align-items:center;justify-content:center}
 .src-m{display:none}
+.views{display:flex;gap:8px;flex-wrap:wrap}
 .freset{display:none;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:5px 12px;font-size:13px;font-weight:600;cursor:pointer}
 .freset:disabled{opacity:.45;cursor:default}
 .seg .vi{display:none;width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
@@ -252,7 +260,7 @@ dialog.poster::backdrop{background:rgba(10,12,16,.78)}
   .bar .row.main{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:center}
   .bar .row.main .search{grid-column:1;grid-row:1;min-width:0}
   .bar .row.main .ftoggle{grid-column:2;grid-row:1;display:inline-flex}
-  .bar .row.main #seg-view{grid-column:1/-1;grid-row:2;justify-self:start}
+  .bar .row.main .views{grid-column:1/-1;grid-row:2;justify-self:start}
   .bar .row.main #seg-zone{grid-column:1/-1;grid-row:3;justify-self:start;display:none}
   .bar.fopen .row.main #seg-zone{display:inline-flex}
   #cats,#row-opts{display:none}
@@ -304,10 +312,14 @@ dialog.poster::backdrop{background:rgba(10,12,16,.78)}
 
   <div class="bar" id="bar">
     <div class="row main">
+      <div class="views">
       <div class="seg" id="seg-view" role="group" aria-label="Affichage">
         <button id="v-list" data-view="list" aria-label="Liste"><svg class="vi" viewBox="0 0 24 24"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg><span class="vt">Liste</span></button>
         <button id="v-cal" data-view="cal" aria-label="Mois"><svg class="vi" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><span class="vt">Mois</span></button>
-        <button id="v-arb" data-view="arb" aria-label="Arbitres" hidden><svg class="vi" viewBox="0 0 24 24"><circle cx="12" cy="7.5" r="3.5"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/></svg><span class="vt">Arbitres</span></button>
+      </div>
+      <div class="seg" id="seg-arb" role="group" aria-label="Arbitres" hidden>
+        <button id="v-arb" data-view="arb" aria-label="Arbitres"><svg class="vi" viewBox="0 0 24 24"><circle cx="12" cy="7.5" r="3.5"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/></svg><span class="vt">Arbitres</span></button>
+      </div>
       </div>
       <div class="seg" id="seg-zone" role="group" aria-label="Zone">
         <button id="z-all" data-zone="all">Toutes zones</button>
@@ -615,12 +627,12 @@ function card(e){
   const zt=e.z==='s'?'<span class="tag zs">Sud</span>':e.z==='n'?'<span class="tag zn">Nord</span>':'<span class="tag za">Toutes zones</span>';
   const ct=e.c!=='c'?`<span class="tag cat" style="--c:var(${CATS[e.c].v})">${CATS[e.c].l}</span>`:'';
   const rg=e.e?`<span class="range">${fmtShort(e.start)} → ${fmtShort(e.end)}</span>`:'';
-  return `<article class="ev z-${e.z} c-${e.c}${e.x?' cancel':''}${e.club?' club':''}">
+  return `<article id="ev-${e.id}" class="ev z-${e.z} c-${e.c}${e.x?' cancel':''}${e.club?' club':''}">
     <div class="meta">${e.club?'<span class="tag clubt">Le Carreau</span>':''}${zt}${ct}${e.x?'<span class="tag x">Annulé</span>':''}${fm.map(f=>`<span class="tag fmt">${f}</span>`).join('')}${rg}</div>
     <div class="t">${esc(e.t)}</div>
     ${e.n?`<div class="n">${esc(e.n)}</div>`:''}
     ${acts(e)}
-    ${e.arbs.length?`<div class="arb"><span>Arbitre${e.arbs.length>1?'s':''}</span><div>${e.arbs.map(a=>esc(a)).join(', ')}</div></div>`:''}
+    ${e.arbs.length?`<div class="arb" aria-label="Arbitre${e.arbs.length>1?'s':''}">${e.arbs.map(a=>`<span class="ref" title="Arbitre"><span class="ic"><svg viewBox="0 0 24 24"><circle cx="9" cy="14.5" r="5"/><path d="M12.5 11H21v3.2h-5.5"/><path d="M5 6.5 3.5 5M9 5.5V3.5M13 6.5 14.5 5"/></svg></span><span class="rl">Arbitre</span><span class="rn">${esc(a)}</span></span>`).join('')}</div>`:''}
   </article>`;
 }
 
@@ -684,7 +696,7 @@ function renderArb(list){
   main.innerHTML=`<div class="arbs">${arr.map(([n,evs])=>{
     const act=evs.filter(e=>!e.x).length;
     return `<div class="arbc"><h3>${esc(n)} <span class="num">${act} désignation${act>1?'s':''}${evs.length>act?` · ${evs.length-act} annulée${evs.length-act>1?'s':''}`:''}</span></h3>
-    <ul>${evs.map(e=>`<li class="${e.x?'cancel':''}${e.end<today?' past':''}"><span class="d num">${fmtShort(e.start)}</span><span class="w">${esc(e.t)} <span class="tag ${e.z==='s'?'zs':e.z==='n'?'zn':'za'}">${e.z==='a'?'Toutes':ZL[e.z]}</span></span></li>`).join('')}</ul></div>`}).join('')}</div>`;
+    <ul>${evs.map(e=>`<li class="${e.x?'cancel':''}${e.end<today?' past':''}"><span class="d num">${fmtShort(e.start)}</span><span class="w"><button type="button" class="go" data-go="${e.id}" title="Voir la compétition">${esc(e.t)}</button> <span class="tag ${e.z==='s'?'zs':e.z==='n'?'zn':'za'}">${e.z==='a'?'Toutes':ZL[e.z]}</span></span></li>`).join('')}</ul></div>`}).join('')}</div>`;
 }
 
 function emptyMsg(t='Aucune compétition',s='Modifiez la recherche ou les filtres pour élargir la sélection.'){
@@ -723,7 +735,7 @@ function controls(){
   const all=document.getElementById('cat-all'); all.checked=on.length===keys.length; all.indeterminate=on.length>0&&on.length<keys.length;
   document.getElementById('dd-sum').textContent=on.length===keys.length?'Toutes':on.length===0?'Aucune':on.length===1?CATS[on[0]].l:on.length+' sélectionnées';
   const hasA=EV.some(e=>e.arbs.length), hasX=EV.some(e=>e.x);
-  document.getElementById('v-arb').hidden=!hasA; document.getElementById('lbl-x').hidden=!hasX;
+  document.getElementById('seg-arb').hidden=!hasA; document.getElementById('lbl-x').hidden=!hasX;
   if(!hasA&&S.view==='arb')S.view='list';
   document.getElementById('t-up').checked=S.up;
   document.getElementById('t-x').checked=S.x;
@@ -831,6 +843,13 @@ document.getElementById('next').addEventListener('click',ev=>{
   const e=EV.find(x=>x.id===+pb.dataset.poster); if(e)openPoster(e);
 });
 main.addEventListener('click',ev=>{
+  const go=ev.target.closest('[data-go]');
+  if(go){const e=EV.find(x=>x.id===+go.dataset.go); if(!e)return;
+    S.view='list'; S.calM=e.m; S.sel=null; render();
+    const el=document.getElementById('ev-'+e.id); if(!el)return;
+    spyLock=Date.now()+900;
+    window.scrollTo({top:el.getBoundingClientRect().top+window.scrollY-document.getElementById('bar').offsetHeight-14,behavior:'smooth'});
+    el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); return;}
   const pb=ev.target.closest('[data-poster]');
   if(pb){const e=EV.find(x=>x.id===+pb.dataset.poster); if(e)openPoster(e); return;}
   const b=ev.target.closest('[data-arb]'); if(!b)return;
