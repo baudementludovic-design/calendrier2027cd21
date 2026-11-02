@@ -247,19 +247,16 @@ dialog.poster::backdrop{background:rgba(10,12,16,.78)}
 .seg .vi{display:none;width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
 @media (max-width:720px){
   .bar{padding-block:8px 6px;gap:8px;margin-top:10px}
-  .bar .row.main{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px;align-items:center}
+  .bar .row.main{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:center}
   .bar .row.main .search{grid-column:1;grid-row:1;min-width:0}
-  .bar .row.main #seg-view{grid-column:2;grid-row:1}
-  .bar .row.main .ftoggle{grid-column:3;grid-row:1;display:inline-flex}
-  .bar .row.main #seg-zone{grid-column:1/-1;grid-row:2;justify-self:start;display:none}
+  .bar .row.main .ftoggle{grid-column:2;grid-row:1;display:inline-flex}
+  .bar .row.main #seg-view{grid-column:1/-1;grid-row:2;justify-self:start}
+  .bar .row.main #seg-zone{grid-column:1/-1;grid-row:3;justify-self:start;display:none}
   .bar.fopen .row.main #seg-zone{display:inline-flex}
   #cats,#row-opts{display:none}
   .bar.fopen #cats,.bar.fopen #row-opts{display:flex}
   #row-opts .src{display:none}
   .seg button{padding:6px 10px;font-size:13px}
-  #seg-view button{padding:6px 9px;display:inline-flex;align-items:center}
-  #seg-view .vi{display:block}
-  #seg-view .vt{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
   .search input{padding-block:7px;font-size:16px}
   .months button{font-size:15px;padding:3px 8px}
   .src-m{display:flex;justify-content:flex-end;margin-top:8px}
@@ -322,7 +319,6 @@ dialog.poster::backdrop{background:rgba(10,12,16,.78)}
     <div class="row" id="row-opts">
       <label class="toggle"><input type="checkbox" id="t-up"> À venir uniquement</label>
       <label class="toggle" id="lbl-x" hidden><input type="checkbox" id="t-x" checked> Afficher les annulés</label>
-      <label class="toggle"><input type="checkbox" id="t-club"> Concours du Carreau uniquement</label>
       
       <span class="src" id="src"></span>
     </div>
@@ -582,7 +578,7 @@ const S={view:'list',zone:'all',cats:new Set(Object.keys(CATS)),q:'',up:false,cl
 try{const saved=JSON.parse(localStorage.getItem('carreau2027')||'{}');
   if(saved.view)S.view=saved.view; if(saved.zone)S.zone=saved.zone;
   if(Array.isArray(saved.cats))S.cats=new Set(saved.cats.filter(c=>CATS[c]).concat('i'));
-  if(typeof saved.up==='boolean')S.up=saved.up; if(typeof saved.club==='boolean')S.club=saved.club; if(typeof saved.x==='boolean')S.x=saved.x;}catch(e){}
+  if(typeof saved.up==='boolean')S.up=saved.up; if(typeof saved.x==='boolean')S.x=saved.x;}catch(e){}
 function save(){try{localStorage.setItem('carreau2027',JSON.stringify({view:S.view,zone:S.zone,cats:[...S.cats],up:S.up,club:S.club,x:S.x}))}catch(e){}}
 
 function filtered(){
@@ -727,7 +723,6 @@ function controls(){
   if(!hasA&&S.view==='arb')S.view='list';
   document.getElementById('t-up').checked=S.up;
   document.getElementById('t-x').checked=S.x;
-  document.getElementById('t-club').checked=S.club;
   
 }
 
@@ -804,7 +799,6 @@ document.addEventListener('keydown',ev=>{if(ev.key==='Escape')document.getElemen
 document.getElementById('q').addEventListener('input',e=>{S.q=e.target.value;render()});
 document.getElementById('t-up').addEventListener('change',e=>{S.up=e.target.checked;render()});
 document.getElementById('t-x').addEventListener('change',e=>{S.x=e.target.checked;render()});
-document.getElementById('t-club').addEventListener('change',e=>{S.club=e.target.checked;render()});
 
 /* ---------- Affiches ---------- */
 function posterSrc(u){
@@ -915,7 +909,7 @@ async function loadSheet(){
   }
 }
 
-try{if(matchMedia('(max-width:720px)').matches)document.getElementById('q').placeholder='Chercher…';}catch(e){}
+try{if(matchMedia('(max-width:720px)').matches)document.getElementById('q').placeholder='Club, ville, challenge…';}catch(e){}
 header(); render(); loadSheet();
 if('serviceWorker' in navigator && location.protocol==='https:'){navigator.serviceWorker.register('sw.js').catch(e=>console.warn('Service worker non enregistré',e));}
 </script>
